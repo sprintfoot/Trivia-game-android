@@ -164,7 +164,7 @@ export class Controller {
            <span class="ctl-badge" style="--c:${team?.color ?? '#fff'}">${esc(team?.name ?? '')}</span>
            <span class="ctl-timer" data-timer></span>
          </div>
-         <div class="ctl-prompt">${esc(m.prompt)}${m.picture ? '<span class="ctl-look">👀 Watch the TV, the picture is being uncovered!</span>' : ''}</div>
+         <div class="ctl-prompt">${esc(m.prompt)}${m.media === 'tune' ? '<span class="ctl-look">🎧 Listen to the TV, a tune is playing!</span>' : m.media === 'picture' ? '<span class="ctl-look">👀 Watch the TV, the picture is being uncovered!</span>' : ''}</div>
          <div class="ctl-answers">${m.choices
            .map(
              (c, i) =>
