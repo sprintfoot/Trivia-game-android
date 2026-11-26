@@ -79,7 +79,8 @@ export type PlayerMsg =
   | { t: 'vote'; qid: number; choice: number }
   | { t: 'guess'; qid: number; text: string }
   | { t: 'bet'; amount: number }
-  | { t: 'hint'; qid: number };
+  | { t: 'hint'; qid: number }
+  | { t: 'leave' };
 
 export const PEER_PREFIX = 'trivia-party-room-';
 

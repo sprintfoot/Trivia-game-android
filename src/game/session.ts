@@ -27,7 +27,9 @@ export type Picture =
   /** Not a picture but a melody the device plays, uncovered phrase by phrase. */
   | { kind: 'tune'; id: string }
   | { kind: 'shadow'; emoji: string }
-  | { kind: 'pixel'; emoji: string };
+  | { kind: 'pixel'; emoji: string }
+  /** Who am I?: text clues about a famous person, hardest first, shown one at a time. */
+  | { kind: 'clues'; icon: string; clues: string[] };
 
 export interface BankQuestion {
   id: string;

@@ -90,6 +90,13 @@ Both are on by default and can be switched off in setup under **Special rounds**
 - **⚡ Lightning round:** five quick questions, eight seconds each, from all your categories, just before the final round.
 - **🎲 Final wager:** one last question. Each team bets some or all of its points (at least 500 can always be bet, so nobody is shut out). Right wins the bet, wrong loses it.
 
+## Who Am I?
+
+The **Who Am I?** category (40 famous people: painters, musicians, composers, actors, directors, athletes and writers) shows four clues, one at a time, hardest first. Answer early on fewer clues for more points.
+## Staten Island
+
+The **Staten Island** category (35 questions) covers the ferry, the bridges, neighborhoods, landmarks, history, food, sports and famous Staten Islanders. Facts were checked against public sources. It's off by default, so tick it in setup.
+
 ## Name That Tune
 
 The **Name That Tune** category plays a melody and you pick its title. The tune plays a bit at a
@@ -127,6 +134,10 @@ All music is original and synthesised live in the app: a game-show theme on the 
 Every finished game is saved on the device. **🏆 Hall of Fame** on the title screen shows the top 10 scores (solo and party), lifetime stats, a trophy case and your best and weakest categories.
 
 At the end of a game, players and teams earn fun awards: ⚡ Speed Demon, 🔥 On Fire, 🧠 Big Brain, ⏱️ Clutch, 🌩️ Storm Chaser, 🎯 Sharpshooter, 🎲 High Roller, 🙌 No Help Needed, and a champ award for the best category. In a party game they show on the TV and on each winner's phone.
+
+## Getting home
+
+Tap 🏠 in the top-left corner (or press Back or Escape) to return to the title screen. During a game you're asked first. If you're hosting, this closes the room and every phone is told the game ended. On a phone it leaves the room, and before the game starts your name is removed from the lobby.
 
 ## Game options
 

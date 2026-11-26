@@ -101,7 +101,10 @@ export class PartyClient {
 
   leave(): void {
     this.closed = true;
-    this.peer?.destroy();
+    this.send({ t: 'leave' });
+    // Give the goodbye a moment to reach the host before hanging up.
+    const peer = this.peer;
+    setTimeout(() => peer?.destroy(), 250);
     this.setStatus('closed');
   }
 }

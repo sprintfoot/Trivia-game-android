@@ -8,6 +8,8 @@ function flagUrl(code: string): string {
   return FLAG_URLS[`../assets/flags/${code}.svg`] ?? '';
 }
 
+const escHtml = (t: string) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+
 const COLS = 6;
 const ROWS = 4;
 
@@ -24,6 +26,8 @@ export function pictureHtml(p: Picture): string {
       return `<div class="pic pic-shadow"><span>${p.emoji}</span></div>`;
     case 'pixel':
       return `<div class="pic pic-pixel"><canvas width="240" height="240"></canvas></div>`;
+    case 'clues':
+      return `<ol class="pic pic-clues">${p.clues.map((c, i) => `<li><b>${i + 1}</b><span>${escHtml(c)}</span></li>`).join('')}</ol>`;
     case 'tune':
       return `<div class="pic pic-tune"><div class="vinyl"><b></b></div>
         <div class="eq">${Array.from({ length: 7 }, (_, i) => `<i style="--i:${i}"></i>`).join('')}</div>
@@ -67,6 +71,21 @@ export function startReveal(root: HTMLElement, p: Picture, durationMs: number): 
       finish: () => {
         timers.forEach(clearTimeout);
         spans.forEach((s) => s.classList.add('on'));
+      },
+    };
+  }
+
+  if (p.kind === 'clues') {
+    // One clue at a time, hardest first, so a quick answer on fewer clues scores more.
+    const items = [...root.querySelectorAll<HTMLElement>('.pic-clues li')];
+    items.forEach((li, n) => at(n === 0 ? 200 : (n / items.length) * span, () => {
+      li.classList.add('on');
+      sound.pop(n);
+    }));
+    return {
+      finish: () => {
+        timers.forEach(clearTimeout);
+        items.forEach((li) => li.classList.add('on'));
       },
     };
   }

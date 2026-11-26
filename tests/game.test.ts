@@ -142,7 +142,7 @@ describe('GameSession', () => {
 
 describe('picture questions', () => {
   it('builds flag, emoji and zoom rounds with four distinct choices', () => {
-    const pics = BANK.filter((q) => q.picture && q.picture.kind !== 'tune');
+    const pics = BANK.filter((q) => q.picture && q.picture.kind !== 'tune' && q.picture.kind !== 'clues');
     expect(pics.length).toBeGreaterThanOrEqual(80);
     expect(new Set(pics.map((q) => q.picture!.kind))).toEqual(new Set(['flag', 'emoji', 'zoom', 'shadow', 'pixel']));
     for (const q of pics) {
@@ -151,6 +151,19 @@ describe('picture questions', () => {
     }
     const france = pics.find((q) => q.id === 'flag-fr')!;
     expect(france.choices[france.answer]).toBe('France');
+  });
+
+  it('builds Who Am I? questions with four clues that never name the answer', () => {
+    const who = BANK.filter((q) => q.category === 'whoami');
+    expect(who.length).toBeGreaterThanOrEqual(40);
+    for (const q of who) {
+      expect(q.picture?.kind).toBe('clues');
+      if (q.picture?.kind !== 'clues') continue;
+      expect(q.picture.clues).toHaveLength(4);
+      expect(new Set(q.choices).size).toBe(4);
+      const surname = q.choices[q.answer].split(' ').at(-1)!.toLowerCase();
+      for (const c of q.picture.clues) expect(c.toLowerCase()).not.toContain(surname);
+    }
   });
 });
 
