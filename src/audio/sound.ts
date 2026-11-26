@@ -175,6 +175,11 @@ export class Sound {
     g.setTargetAtTime(1, t + hold, 0.25);
   }
 
+  /** Dips the music for a while (e.g. while the host is talking). */
+  duckFor(ms: number): void {
+    this.duck(0.3, ms / 1000);
+  }
+
   async loadSample(name: string, url: string): Promise<void> {
     if (!this.ctx) return;
     const res = await fetch(url);

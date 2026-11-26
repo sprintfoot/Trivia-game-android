@@ -65,6 +65,10 @@ The **Picture Reveal** category (89 questions) has three kinds of picture that u
 
 No photos, movie stills or brand logos are bundled, because those are copyrighted. Flags are drawn from the MIT-licensed [flag-icons](https://github.com/lipis/flag-icons) project (licence in `src/assets/flags/LICENSE`), and emoji come from the phone's own emoji font. In party games, the picture shows on the TV and phones show the answer buttons.
 
+## Host voice
+
+A game-show host cracks original one-liners throughout the game: at the start, each round, the category, right and wrong answers, streaks, hints, lead changes and the winner. Lines are in `src/audio/lines.ts`, so it's easy to add more. The voice is the device's own text-to-speech (Android's TTS in the app, the browser's voice on the web), so nothing is recorded or downloaded. In Settings you can turn the host voice off, or turn on **Read questions aloud** for TV play.
+
 ## Game options
 
 - Pick any mix of categories, 2–6 rounds, 3/5/7/10 questions per round, and a 10–30 second timer.
