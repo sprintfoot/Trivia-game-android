@@ -24,7 +24,13 @@ export type CategoryId =
   | 'teasers'
   | 'estimate'
   | 'whoami'
-  | 'statenisland';
+  | 'statenisland'
+  | 'christmas'
+  | 'halloween'
+  | 'thanksgiving'
+  | 'valentines'
+  | 'july4'
+  | 'newyear';
 
 export interface Category {
   id: CategoryId;
@@ -43,6 +49,12 @@ export const CATEGORIES: readonly Category[] = [
   { id: 'estimate', name: 'Closest Guess', icon: '🎯', color: '#ff5a6e' },
   { id: 'whoami', name: 'Who Am I?', icon: '🕵️', color: '#b48cff' },
   { id: 'statenisland', name: 'Staten Island', icon: '⛴️', color: '#ff8a1f' },
+  { id: 'christmas', name: 'Christmas', icon: '🎄', color: '#3ddc84' },
+  { id: 'halloween', name: 'Halloween', icon: '🎃', color: '#ff8c1a' },
+  { id: 'thanksgiving', name: 'Thanksgiving', icon: '🦃', color: '#d9893b' },
+  { id: 'valentines', name: "Valentine's Day", icon: '💘', color: '#ff5c9a' },
+  { id: 'july4', name: 'Fourth of July', icon: '🎆', color: '#4d8dff' },
+  { id: 'newyear', name: "New Year's", icon: '🎉', color: '#ffd84d' },
   { id: 'screen', name: 'Movies', icon: '🎬', color: '#ff4fa3' },
   { id: 'disney', name: 'Disney & Pixar', icon: '🏰', color: '#5ab4ff' },
   { id: 'tv', name: 'TV Shows', icon: '📺', color: '#ff7ad9' },
@@ -70,3 +82,19 @@ export function getCategory(id: CategoryId): Category {
   if (!c) throw new Error(`Unknown category: ${id}`);
   return c;
 }
+
+/** The holiday pack that fits the date, to suggest in setup, or null outside holiday seasons. */
+export function seasonalPack(d: Date): CategoryId | null {
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  if (m === 10) return 'halloween';
+  if (m === 11) return 'thanksgiving';
+  if (m === 12 && day <= 26) return 'christmas';
+  if ((m === 12 && day > 26) || (m === 1 && day <= 7)) return 'newyear';
+  if (m === 2 && day <= 14) return 'valentines';
+  if ((m === 6 && day >= 20) || (m === 7 && day <= 4)) return 'july4';
+  return null;
+}
+
+/** Special packs listed under their own heading in setup. */
+export const PACK_CATEGORIES: readonly CategoryId[] = ['statenisland', 'christmas', 'halloween', 'thanksgiving', 'valentines', 'july4', 'newyear'];

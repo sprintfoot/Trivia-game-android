@@ -583,3 +583,20 @@ describe('awards and hall of fame', async () => {
     expect(hall.games[0].at).toBe(MAX_GAMES + 4);
   });
 });
+
+describe('holiday packs', async () => {
+  const { seasonalPack, PACK_CATEGORIES } = await import('../src/game/categories');
+  it('suggests the pack that is in season', () => {
+    expect(seasonalPack(new Date(2026, 10, 26))).toBe('thanksgiving');
+    expect(seasonalPack(new Date(2026, 9, 3))).toBe('halloween');
+    expect(seasonalPack(new Date(2026, 11, 20))).toBe('christmas');
+    expect(seasonalPack(new Date(2026, 11, 31))).toBe('newyear');
+    expect(seasonalPack(new Date(2027, 0, 2))).toBe('newyear');
+    expect(seasonalPack(new Date(2027, 1, 10))).toBe('valentines');
+    expect(seasonalPack(new Date(2027, 6, 1))).toBe('july4');
+    expect(seasonalPack(new Date(2027, 3, 1))).toBeNull();
+  });
+  it('has at least 15 questions in every pack', () => {
+    for (const c of PACK_CATEGORIES) expect(BANK.filter((q) => q.category === c).length).toBeGreaterThanOrEqual(15);
+  });
+});
