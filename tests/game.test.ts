@@ -125,7 +125,7 @@ describe('GameSession', () => {
 
 describe('picture questions', () => {
   it('builds flag, emoji and zoom rounds with four distinct choices', () => {
-    const pics = BANK.filter((q) => q.picture);
+    const pics = BANK.filter((q) => q.picture && q.picture.kind !== 'tune');
     expect(pics.length).toBeGreaterThanOrEqual(80);
     expect(new Set(pics.map((q) => q.picture!.kind))).toEqual(new Set(['flag', 'emoji', 'zoom']));
     for (const q of pics) {
@@ -250,5 +250,35 @@ describe('decideTeamAnswer', () => {
   it('makes readable room codes', () => {
     const code = makeRoomCode(mulberry32(3));
     expect(code).toMatch(/^[A-HJKMNP-Z]{4}$/);
+  });
+});
+
+describe('name that tune', async () => {
+  const { TUNES, parseNotes, buildTuneQuestions, JINGLE_TRIVIA } = await import('../src/data/tunes');
+
+  it('parses every melody into real notes', () => {
+    for (const [id, t] of Object.entries(TUNES)) {
+      const notes = parseNotes(t.notes);
+      expect(notes.length, id).toBeGreaterThanOrEqual(8);
+      for (const [f, b] of notes) {
+        expect(b).toBeGreaterThan(0);
+        if (f !== null) expect(f).toBeGreaterThan(80);
+        if (f !== null) expect(f).toBeLessThan(2500);
+      }
+    }
+  });
+
+  it('makes a tune question for every melody with 4 distinct choices', () => {
+    const qs = buildTuneQuestions().filter((q) => q.picture?.kind === 'tune');
+    expect(qs.length).toBe(Object.keys(TUNES).length);
+    for (const q of qs) {
+      expect(new Set(q.choices).size).toBe(4);
+      expect(q.choices[q.answer]).toBe(TUNES[(q.picture as { id: string }).id].title);
+    }
+  });
+
+  it('includes jingle trivia asked in words only', () => {
+    expect(JINGLE_TRIVIA.length).toBeGreaterThanOrEqual(10);
+    expect(BANK.filter((q) => q.category === 'tunes').length).toBeGreaterThanOrEqual(40);
   });
 });

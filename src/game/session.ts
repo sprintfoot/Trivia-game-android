@@ -23,7 +23,9 @@ import { SCORING, scoreAnswer, type ScoreBreakdown } from './scoring';
 export type Picture =
   | { kind: 'flag'; code: string }
   | { kind: 'emoji'; clues: string[] }
-  | { kind: 'zoom'; emoji: string; x: number; y: number };
+  | { kind: 'zoom'; emoji: string; x: number; y: number }
+  /** Not a picture but a melody the device plays, uncovered phrase by phrase. */
+  | { kind: 'tune'; id: string };
 
 export interface BankQuestion {
   id: string;

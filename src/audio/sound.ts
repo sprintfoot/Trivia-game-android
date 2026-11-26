@@ -167,7 +167,7 @@ export class Sound {
 
   /** Briefly lowers the music so a sound effect cuts through. */
   private duck(amount = 0.35, hold = 0.5): void {
-    if (!this.ctx) return;
+    if (!this.ctx || this.held) return;
     const g = this.musicDuck.gain;
     const t = this.now;
     g.cancelScheduledValues(t);
@@ -178,6 +178,72 @@ export class Sound {
   /** Dips the music for a while (e.g. while the host is talking). */
   duckFor(ms: number): void {
     this.duck(0.3, ms / 1000);
+  }
+
+  private held = false;
+
+  /** Silences the background music (e.g. while a Name That Tune melody plays). */
+  holdMusic(on: boolean): void {
+    this.held = on;
+    if (!this.ctx) return;
+    const g = this.musicDuck.gain;
+    g.cancelScheduledValues(this.now);
+    g.setTargetAtTime(on ? 0.0001 : 1, this.now, on ? 0.05 : 0.3);
+  }
+
+  /**
+   * Plays a melody of [frequency | null (rest), beats] pairs with a soft music-box lead.
+   * Returns a stop() that cuts it short. `onEnd` fires when the phrase finishes naturally.
+   */
+  playMelody(notes: [number | null, number][], bpm: number, onEnd?: () => void): () => void {
+    const ctx = this.ctx;
+    if (!ctx) return () => {};
+    const out = ctx.createGain();
+    out.gain.value = 1;
+    out.connect(this.sfxBus);
+    // A short echo for a bit of space.
+    const delay = ctx.createDelay(1);
+    delay.delayTime.value = 0.22;
+    const fb = ctx.createGain();
+    fb.gain.value = 0.22;
+    out.connect(delay).connect(fb).connect(delay);
+    fb.connect(this.sfxBus);
+
+    const beat = 60 / bpm;
+    let t = ctx.currentTime + 0.08;
+    const oscs: OscillatorNode[] = [];
+    for (const [freq, beats] of notes) {
+      const dur = beats * beat;
+      if (freq) {
+        const len = Math.max(0.12, dur * 0.92);
+        const voices: [OscillatorType, number, number][] = [['triangle', freq, 0.32], ['sine', freq * 2, 0.07], ['sine', freq / 2, 0.08]];
+        for (const [type, f, vol] of voices) {
+          const o = ctx.createOscillator();
+          o.type = type;
+          o.frequency.value = f;
+          const g = ctx.createGain();
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+          g.gain.exponentialRampToValueAtTime(vol * 0.55, t + Math.min(0.15, len * 0.5));
+          g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+          o.connect(g).connect(out);
+          o.start(t);
+          o.stop(t + len + 0.05);
+          oscs.push(o);
+        }
+      }
+      t += dur;
+    }
+    const endTimer = window.setTimeout(() => onEnd?.(), (t - ctx.currentTime) * 1000);
+    return () => {
+      window.clearTimeout(endTimer);
+      const now = ctx.currentTime;
+      out.gain.setTargetAtTime(0.0001, now, 0.03);
+      fb.gain.setTargetAtTime(0.0001, now, 0.03);
+      for (const o of oscs) {
+        try { o.stop(now + 0.15); } catch { /* already stopped */ }
+      }
+    };
   }
 
   async loadSample(name: string, url: string): Promise<void> {

@@ -1,5 +1,6 @@
 import type { Picture } from '../game/session';
 import { sound } from '../audio/sound';
+import { TUNES, parseNotes } from '../data/tunes';
 
 const FLAG_URLS = import.meta.glob<string>('../assets/flags/*.svg', { eager: true, query: '?url', import: 'default' });
 
@@ -19,6 +20,10 @@ export function pictureHtml(p: Picture): string {
       return `<div class="pic pic-emoji">${p.clues.map((c) => `<span>${c}</span>`).join('')}</div>`;
     case 'zoom':
       return `<div class="pic pic-zoom"><span style="transform-origin:${p.x * 100}% ${p.y * 100}%">${p.emoji}</span></div>`;
+    case 'tune':
+      return `<div class="pic pic-tune"><div class="vinyl"><b></b></div>
+        <div class="eq">${Array.from({ length: 7 }, (_, i) => `<i style="--i:${i}"></i>`).join('')}</div>
+        <div class="tune-label">🎧 Listen…</div></div>`;
   }
 }
 
@@ -62,6 +67,8 @@ export function startReveal(root: HTMLElement, p: Picture, durationMs: number): 
     };
   }
 
+  if (p.kind === 'tune') return startTune(root, p.id);
+
   const emoji = root.querySelector<HTMLElement>('.pic-zoom span')!;
   emoji.style.transition = 'none';
   emoji.style.transform = 'scale(5)';
@@ -75,6 +82,48 @@ export function startReveal(root: HTMLElement, p: Picture, durationMs: number): 
     finish: () => {
       emoji.style.transition = 'transform 0.4s ease-out';
       emoji.style.transform = 'scale(1)';
+    },
+  };
+}
+
+/**
+ * Plays the tune a bit at a time: the opening, then a longer stretch, then the whole thing on a
+ * loop until the answer is revealed. Background music is held while it plays.
+ */
+function startTune(root: HTMLElement, id: string): { finish: () => void } {
+  const tune = TUNES[id];
+  const pic = root.querySelector<HTMLElement>('.pic-tune');
+  const label = root.querySelector<HTMLElement>('.tune-label');
+  if (!tune || !pic) return { finish: () => {} };
+  const notes = parseNotes(tune.notes);
+  const cuts = [Math.max(3, Math.round(notes.length * 0.35)), Math.max(5, Math.round(notes.length * 0.65)), notes.length];
+  let stage = 0;
+  let stop: () => void = () => {};
+  let timer = 0;
+  let done = false;
+
+  sound.holdMusic(true);
+  const play = () => {
+    if (done) return;
+    const n = cuts[Math.min(stage, cuts.length - 1)];
+    if (label) label.textContent = stage === 0 ? '🎧 Listen…' : stage === 1 ? '🎧 A little more…' : '🎧 The whole tune!';
+    pic.classList.add('playing');
+    stop = sound.playMelody(notes.slice(0, n), tune.bpm, () => {
+      pic.classList.remove('playing');
+      stage++;
+      timer = window.setTimeout(play, 900);
+    });
+  };
+  timer = window.setTimeout(play, 350);
+
+  return {
+    finish: () => {
+      done = true;
+      window.clearTimeout(timer);
+      stop();
+      pic.classList.remove('playing');
+      if (label) label.textContent = `🎶 ${tune.title}`;
+      sound.holdMusic(false);
     },
   };
 }

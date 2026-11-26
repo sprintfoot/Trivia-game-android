@@ -53,7 +53,7 @@ async function playGame(config: GameConfig): Promise<'again' | 'setup'> {
         totalQuestions: session.totalQuestions,
         multiplier: session.multiplier,
       };
-      voice.question(q.prompt, q.choices);
+      if (q.picture?.kind !== 'tune') voice.question(q.prompt, q.choices);
       const pick = await ui.askQuestion(q, cat, config.timeLimitMs, hud, {
         onTension: (t) => {
           stage.setTension(t);
@@ -214,10 +214,10 @@ async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<voi
           hidden: p.teamId ? session.hiddenFor(p.teamId) : [],
           hintsLeft: p.teamId && session.teams.some((t) => t.id === p.teamId) ? session.team(p.teamId).hintsLeft : 0,
           teamSize: p.teamId ? host.membersOf(p.teamId).length : 1,
-          picture: !!q.picture,
+          media: q.picture ? (q.picture.kind === 'tune' ? 'tune' : 'picture') : null,
         }));
 
-        voice.question(q.prompt, q.choices);
+        if (q.picture?.kind !== 'tune') voice.question(q.prompt, q.choices);
         const tv = party.tvQuestion(
           q,
           cat,

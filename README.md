@@ -65,6 +65,19 @@ The **Picture Reveal** category (89 questions) has three kinds of picture that u
 
 No photos, movie stills or brand logos are bundled, because those are copyrighted. Flags are drawn from the MIT-licensed [flag-icons](https://github.com/lipis/flag-icons) project (licence in `src/assets/flags/LICENSE`), and emoji come from the phone's own emoji font. In party games, the picture shows on the TV and phones show the answer buttons.
 
+## Name That Tune
+
+The **Name That Tune** category plays a melody and you pick its title. The tune plays a bit at a
+time: first the opening, then a longer stretch, then the whole thing on a loop until the answer is
+shown, so fast ears score more. The background music goes quiet while a tune plays, and the host
+voice doesn't read these questions out.
+
+- All 31 melodies are public domain (nursery songs, carols, folk songs and classical pieces). The
+  app plays its own synthesised arrangement, so there are no recordings to license.
+- Advertising jingles are still under copyright, so they're asked about in words only (for
+  example, "Which cereal goes 'Snap! Crackle! Pop!'?"). None are played.
+- In a party game the tune plays on the TV only. Phones show "Listen to the TV!".
+
 ## Host voice
 
 A game-show host cracks original one-liners throughout the game: at the start, each round, the category, right and wrong answers, streaks, hints, lead changes and the winner. Lines are in `src/audio/lines.ts`, so it's easy to add more. The voice is the device's own text-to-speech (Android's TTS in the app, the browser's voice on the web), so nothing is recorded or downloaded. In Settings you can turn the host voice off, or turn on **Read questions aloud** for TV play.

@@ -1683,6 +1683,64 @@ button:focus-visible {
   display: block;
   will-change: transform;
 }
+.pic-tune {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 10px 4px;
+}
+.pic-tune .vinyl {
+  width: min(22vh, 120px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: repeating-radial-gradient(circle, #111 0 2px, #222 2px 4px);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 0 24px color-mix(in srgb, var(--c) 55%, transparent);
+  animation: vinyl-spin 2.4s linear infinite;
+  animation-play-state: paused;
+}
+.pic-tune .vinyl b {
+  width: 34%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, #000 0 10%, var(--c) 11%);
+}
+.pic-tune.playing .vinyl {
+  animation-play-state: running;
+}
+.pic-tune .eq {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  height: 64px;
+}
+.pic-tune .eq i {
+  width: 9px;
+  height: 18%;
+  border-radius: 4px;
+  background: var(--c);
+  transition: height 0.3s;
+}
+.pic-tune.playing .eq i {
+  animation: eq-bounce 0.5s ease-in-out infinite alternate;
+  animation-delay: calc(var(--i) * -0.13s);
+}
+.pic-tune .tune-label {
+  flex-basis: 100%;
+  text-align: center;
+  font-weight: 800;
+  color: var(--gold);
+}
+@keyframes vinyl-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes eq-bounce {
+  from { height: 15%; }
+  to { height: 100%; }
+}
 .q-card.has-pic .q-text {
   font-size: clamp(18px, 4.6vw, 24px);
 }
