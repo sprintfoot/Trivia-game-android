@@ -189,10 +189,12 @@ button {
 @keyframes bob {
   50% { transform: translateY(-6px); }
 }
-.settings-btn {
+.corner-btns {
   position: absolute;
   top: calc(16px + var(--safe-top));
   right: 18px;
+  display: flex;
+  gap: 8px;
 }
 
 /* ---------- setup ---------- */
@@ -756,4 +758,214 @@ button {
 }
 .row input:checked + .sw::after {
   transform: translateX(22px);
+}
+
+/* ---------- focus (TV remotes, keyboards) ---------- */
+
+button:focus {
+  outline: none;
+}
+button:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+  box-shadow: 0 0 24px rgba(255, 204, 51, 0.7);
+}
+
+.seg-opt small {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.75;
+  margin-top: 2px;
+}
+
+/* ---------- hints ---------- */
+
+.hint-btn {
+  align-self: center;
+  border: 2px solid var(--gold);
+  background: rgba(40, 30, 0, 0.75);
+  color: var(--gold);
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-weight: 900;
+  font-size: 15px;
+  letter-spacing: 0.05em;
+  box-shadow: 0 0 14px rgba(255, 204, 51, 0.4);
+  animation: ans-in 0.45s 0.5s backwards;
+}
+.hint-btn span {
+  font-weight: 600;
+  opacity: 0.8;
+  margin-left: 4px;
+}
+.hint-btn:disabled {
+  opacity: 0.35;
+  box-shadow: none;
+}
+.ans.gone {
+  opacity: 0.15;
+  transform: scale(0.94);
+  filter: grayscale(1);
+}
+
+/* ---------- landscape / TV ---------- */
+
+@media (orientation: landscape) and (min-aspect-ratio: 4/3) {
+  .screen {
+    padding: calc(14px + var(--safe-top)) max(24px, env(safe-area-inset-right)) calc(14px + var(--safe-bottom)) max(24px, env(safe-area-inset-left));
+  }
+  .setup .scroll {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    column-gap: 28px;
+    align-content: start;
+  }
+  .setup .scroll > h3:first-child,
+  .setup .scroll > .chips {
+    grid-column: 1;
+  }
+  .setup .scroll > .chips {
+    grid-row: 2 / span 12;
+    align-self: start;
+    grid-auto-rows: min-content;
+  }
+  .setup .scroll > :not(.chips):not(:first-child) {
+    grid-column: 2;
+  }
+  .setup .scroll h3 {
+    margin-top: 14px;
+  }
+  .setup .foot {
+    max-width: 480px;
+    align-self: flex-end;
+    width: 40%;
+  }
+
+  .question .q-area {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas:
+      'timer answers'
+      'card answers'
+      'hint answers';
+    align-items: center;
+    column-gap: 3vw;
+    row-gap: 1.5vh;
+    justify-content: stretch;
+  }
+  .question .timer {
+    grid-area: timer;
+  }
+  .question .q-card {
+    grid-area: card;
+  }
+  .question .hint-btn {
+    grid-area: hint;
+    justify-self: center;
+  }
+  .question .answers {
+    grid-area: answers;
+    grid-template-columns: 1fr;
+  }
+  .verdict {
+    top: 42%;
+  }
+  .results {
+    max-width: 720px;
+    margin: auto;
+    width: 100%;
+  }
+  .foot.two {
+    max-width: 720px;
+    margin: 0 auto;
+    width: 100%;
+  }
+}
+
+/* Short landscape screens (phones on their side): tighten everything so it fits. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .question .answers {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .ans {
+    min-height: 46px;
+    font-size: 15px;
+    padding: 6px 10px;
+  }
+  .ans .letter {
+    width: 28px;
+    height: 28px;
+  }
+  .q-card {
+    padding: 12px 16px 14px;
+  }
+  .q-text {
+    font-size: 20px;
+  }
+  .timer {
+    width: 58px;
+    height: 58px;
+  }
+  .timer .secs {
+    font-size: 22px;
+  }
+  .hud > div {
+    padding: 5px 10px;
+  }
+  .hud-score .val {
+    font-size: 18px;
+  }
+  .hint-btn {
+    padding: 5px 14px;
+    font-size: 13px;
+  }
+  .question .q-area {
+    padding-top: 4px;
+  }
+}
+
+/* Big screens (TVs, tablets in landscape): scale everything up from the viewport. */
+@media (orientation: landscape) and (min-width: 1100px) {
+  html {
+    font-size: 1.1vw;
+  }
+  .q-text {
+    font-size: 2.6vw;
+  }
+  .ans {
+    font-size: 1.7vw;
+    min-height: 5.5vw;
+  }
+  .ans .letter {
+    width: 3vw;
+    height: 3vw;
+  }
+  .timer {
+    width: 8vw;
+    height: 8vw;
+  }
+  .timer .secs {
+    font-size: 3vw;
+  }
+  .hud > div {
+    font-size: 1.6vw;
+  }
+  .hud-score .val {
+    font-size: 2.2vw;
+  }
+  .chips {
+    grid-template-columns: repeat(auto-fill, minmax(15vw, 1fr));
+  }
+  .chip {
+    font-size: 1.15vw;
+  }
+  .seg-opt {
+    font-size: 1.3vw;
+  }
+  .btn.big {
+    font-size: 1.6vw;
+  }
 }

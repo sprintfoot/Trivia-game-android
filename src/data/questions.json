@@ -2,6 +2,7 @@
  {
   "id": "general-001",
   "category": "general",
+  "age": "kids",
   "prompt": "How many sides does a hexagon have?",
   "choices": [
    "5",
@@ -14,6 +15,7 @@
  {
   "id": "general-002",
   "category": "general",
+  "age": "kids",
   "prompt": "What colour do you get by mixing blue and yellow paint?",
   "choices": [
    "Purple",
@@ -26,6 +28,7 @@
  {
   "id": "general-003",
   "category": "general",
+  "age": "teen",
   "prompt": "How many minutes are in a full day?",
   "choices": [
    "1,240",
@@ -38,6 +41,7 @@
  {
   "id": "general-004",
   "category": "general",
+  "age": "kids",
   "prompt": "Which planet is known as the Red Planet?",
   "choices": [
    "Venus",
@@ -50,6 +54,7 @@
  {
   "id": "general-005",
   "category": "general",
+  "age": "kids",
   "prompt": "What is the largest ocean on Earth?",
   "choices": [
    "Atlantic",
@@ -62,6 +67,7 @@
  {
   "id": "general-006",
   "category": "general",
+  "age": "teen",
   "prompt": "What is the hardest natural substance?",
   "choices": [
    "Gold",
@@ -74,6 +80,7 @@
  {
   "id": "general-007",
   "category": "general",
+  "age": "teen",
   "prompt": "At what temperature does water freeze in Fahrenheit?",
   "choices": [
    "0°F",
@@ -86,6 +93,7 @@
  {
   "id": "general-008",
   "category": "general",
+  "age": "kids",
   "prompt": "How many continents are there?",
   "choices": [
    "5",
@@ -98,6 +106,7 @@
  {
   "id": "general-009",
   "category": "general",
+  "age": "kids",
   "prompt": "Which is the tallest animal in the world?",
   "choices": [
    "Elephant",
@@ -110,6 +119,7 @@
  {
   "id": "general-010",
   "category": "general",
+  "age": "teen",
   "prompt": "How many hours are in a week?",
   "choices": [
    "148",
@@ -122,6 +132,7 @@
  {
   "id": "science-001",
   "category": "science",
+  "age": "teen",
   "prompt": "What is the chemical symbol for gold?",
   "choices": [
    "Ag",
@@ -134,6 +145,7 @@
  {
   "id": "science-002",
   "category": "science",
+  "age": "teen",
   "prompt": "Which gas do plants absorb from the air to make food?",
   "choices": [
    "Oxygen",
@@ -146,6 +158,7 @@
  {
   "id": "science-003",
   "category": "science",
+  "age": "teen",
   "prompt": "Which part of the cell is known as its powerhouse?",
   "choices": [
    "Nucleus",
@@ -158,6 +171,7 @@
  {
   "id": "science-004",
   "category": "science",
+  "age": "teen",
   "prompt": "How many bones are in the adult human body?",
   "choices": [
    "186",
@@ -170,6 +184,7 @@
  {
   "id": "science-005",
   "category": "science",
+  "age": "teen",
   "prompt": "Roughly how fast does light travel?",
   "choices": [
    "300 km/s",
@@ -182,6 +197,7 @@
  {
   "id": "science-006",
   "category": "science",
+  "age": "teen",
   "prompt": "Which particle carries a negative charge?",
   "choices": [
    "Proton",
@@ -194,6 +210,7 @@
  {
   "id": "science-007",
   "category": "science",
+  "age": "kids",
   "prompt": "What is the largest organ of the human body?",
   "choices": [
    "Liver",
@@ -206,6 +223,7 @@
  {
   "id": "science-008",
   "category": "science",
+  "age": "kids",
   "prompt": "Which force keeps us on the ground?",
   "choices": [
    "Magnetism",
@@ -218,6 +236,7 @@
  {
   "id": "science-009",
   "category": "science",
+  "age": "kids",
   "prompt": "What is the closest star to Earth?",
   "choices": [
    "Proxima Centauri",
@@ -230,6 +249,7 @@
  {
   "id": "science-010",
   "category": "science",
+  "age": "kids",
   "prompt": "What is H₂O more commonly called?",
   "choices": [
    "Salt",
@@ -242,6 +262,7 @@
  {
   "id": "history-001",
   "category": "history",
+  "age": "teen",
   "prompt": "In which year did World War II end?",
   "choices": [
    "1918",
@@ -254,6 +275,7 @@
  {
   "id": "history-002",
   "category": "history",
+  "age": "teen",
   "prompt": "Who was the first President of the United States?",
   "choices": [
    "Abraham Lincoln",
@@ -266,6 +288,7 @@
  {
   "id": "history-003",
   "category": "history",
+  "age": "teen",
   "prompt": "Which civilisation built Machu Picchu?",
   "choices": [
    "Aztec",
@@ -278,6 +301,7 @@
  {
   "id": "history-004",
   "category": "history",
+  "age": "teen",
   "prompt": "In which year did humans first land on the Moon?",
   "choices": [
    "1959",
@@ -290,6 +314,7 @@
  {
   "id": "history-005",
   "category": "history",
+  "age": "teen",
   "prompt": "In which year did the Berlin Wall fall?",
   "choices": [
    "1979",
@@ -302,6 +327,7 @@
  {
   "id": "history-006",
   "category": "history",
+  "age": "adult",
   "prompt": "Who was the first woman to fly solo across the Atlantic?",
   "choices": [
    "Amelia Earhart",
@@ -314,6 +340,7 @@
  {
   "id": "history-007",
   "category": "history",
+  "age": "teen",
   "prompt": "Julius Caesar was a leader of which ancient civilisation?",
   "choices": [
    "Greece",
@@ -326,6 +353,7 @@
  {
   "id": "history-008",
   "category": "history",
+  "age": "teen",
   "prompt": "In which year did the Titanic sink?",
   "choices": [
    "1905",
@@ -338,6 +366,7 @@
  {
   "id": "history-009",
   "category": "history",
+  "age": "teen",
   "prompt": "Which ancient wonder still stands today?",
   "choices": [
    "Colossus of Rhodes",
@@ -350,6 +379,7 @@
  {
   "id": "history-010",
   "category": "history",
+  "age": "teen",
   "prompt": "Who painted the Mona Lisa?",
   "choices": [
    "Michelangelo",
@@ -362,6 +392,7 @@
  {
   "id": "geography-001",
   "category": "geography",
+  "age": "teen",
   "prompt": "What is the capital of Australia?",
   "choices": [
    "Sydney",
@@ -374,6 +405,7 @@
  {
   "id": "geography-002",
   "category": "geography",
+  "age": "teen",
   "prompt": "Which country has the largest population?",
   "choices": [
    "China",
@@ -386,6 +418,7 @@
  {
   "id": "geography-003",
   "category": "geography",
+  "age": "teen",
   "prompt": "Mount Everest sits on the border of Nepal and which country?",
   "choices": [
    "India",
@@ -398,6 +431,7 @@
  {
   "id": "geography-004",
   "category": "geography",
+  "age": "teen",
   "prompt": "What is the capital of Canada?",
   "choices": [
    "Toronto",
@@ -410,6 +444,7 @@
  {
   "id": "geography-005",
   "category": "geography",
+  "age": "teen",
   "prompt": "What is the largest hot desert in the world?",
   "choices": [
    "Gobi",
@@ -422,6 +457,7 @@
  {
   "id": "geography-006",
   "category": "geography",
+  "age": "kids",
   "prompt": "How many states are in the USA?",
   "choices": [
    "48",
@@ -434,6 +470,7 @@
  {
   "id": "geography-007",
   "category": "geography",
+  "age": "kids",
   "prompt": "Which country is shaped like a boot?",
   "choices": [
    "Greece",
@@ -446,6 +483,7 @@
  {
   "id": "geography-008",
   "category": "geography",
+  "age": "teen",
   "prompt": "What is the smallest country in the world by area?",
   "choices": [
    "Monaco",
@@ -458,6 +496,7 @@
  {
   "id": "geography-009",
   "category": "geography",
+  "age": "teen",
   "prompt": "What is the capital of Japan?",
   "choices": [
    "Osaka",
@@ -470,6 +509,7 @@
  {
   "id": "geography-010",
   "category": "geography",
+  "age": "teen",
   "prompt": "Which is the largest country by area?",
   "choices": [
    "Canada",
@@ -482,6 +522,7 @@
  {
   "id": "screen-001",
   "category": "screen",
+  "age": "teen",
   "prompt": "Who directed the 1975 film Jaws?",
   "choices": [
    "George Lucas",
@@ -494,6 +535,7 @@
  {
   "id": "screen-002",
   "category": "screen",
+  "age": "kids",
   "prompt": "What is the name of the cowboy toy in Toy Story?",
   "choices": [
    "Buzz",
@@ -506,6 +548,7 @@
  {
   "id": "screen-003",
   "category": "screen",
+  "age": "teen",
   "prompt": "What colour are Dorothy's slippers in the 1939 film The Wizard of Oz?",
   "choices": [
    "Silver",
@@ -518,6 +561,7 @@
  {
   "id": "screen-004",
   "category": "screen",
+  "age": "adult",
   "prompt": "Which film features the line \"I'll be back\"?",
   "choices": [
    "Predator",
@@ -530,6 +574,7 @@
  {
   "id": "screen-005",
   "category": "screen",
+  "age": "teen",
   "prompt": "Which TV show is set around the Central Perk coffee shop?",
   "choices": [
    "Seinfeld",
@@ -542,6 +587,7 @@
  {
   "id": "screen-006",
   "category": "screen",
+  "age": "teen",
   "prompt": "Ellen Ripley is the hero of which film series?",
   "choices": [
    "Alien",
@@ -554,6 +600,7 @@
  {
   "id": "screen-007",
   "category": "screen",
+  "age": "adult",
   "prompt": "In Breaking Bad, what subject did Walter White teach?",
   "choices": [
    "Physics",
@@ -566,6 +613,7 @@
  {
   "id": "screen-008",
   "category": "screen",
+  "age": "kids",
   "prompt": "What kind of animal is Simba in The Lion King?",
   "choices": [
    "Tiger",
@@ -578,6 +626,7 @@
  {
   "id": "screen-009",
   "category": "screen",
+  "age": "kids",
   "prompt": "Which school does Harry Potter attend?",
   "choices": [
    "Hogwarts",
@@ -590,6 +639,7 @@
  {
   "id": "screen-010",
   "category": "screen",
+  "age": "teen",
   "prompt": "What is the name of the hidden nation in Black Panther?",
   "choices": [
    "Genovia",
@@ -602,6 +652,7 @@
  {
   "id": "music-001",
   "category": "music",
+  "age": "kids",
   "prompt": "How many strings does a standard guitar have?",
   "choices": [
    "4",
@@ -614,6 +665,7 @@
  {
   "id": "music-002",
   "category": "music",
+  "age": "teen",
   "prompt": "Which band recorded \"Hey Jude\"?",
   "choices": [
    "The Rolling Stones",
@@ -626,6 +678,7 @@
  {
   "id": "music-003",
   "category": "music",
+  "age": "teen",
   "prompt": "Who is known as the King of Pop?",
   "choices": [
    "Prince",
@@ -638,6 +691,7 @@
  {
   "id": "music-004",
   "category": "music",
+  "age": "teen",
   "prompt": "How many keys are on a standard piano?",
   "choices": [
    "76",
@@ -650,6 +704,7 @@
  {
   "id": "music-005",
   "category": "music",
+  "age": "teen",
   "prompt": "Which composer kept writing music after losing his hearing?",
   "choices": [
    "Mozart",
@@ -662,6 +717,7 @@
  {
   "id": "music-006",
   "category": "music",
+  "age": "teen",
   "prompt": "Freddie Mercury was the lead singer of which band?",
   "choices": [
    "Queen",
@@ -674,6 +730,7 @@
  {
   "id": "music-007",
   "category": "music",
+  "age": "teen",
   "prompt": "Who is known as the Queen of Soul?",
   "choices": [
    "Whitney Houston",
@@ -686,6 +743,7 @@
  {
   "id": "music-008",
   "category": "music",
+  "age": "kids",
   "prompt": "How many musicians play in a quartet?",
   "choices": [
    "3",
@@ -698,6 +756,7 @@
  {
   "id": "music-009",
   "category": "music",
+  "age": "teen",
   "prompt": "What is the highest female singing voice?",
   "choices": [
    "Alto",
@@ -710,6 +769,7 @@
  {
   "id": "music-010",
   "category": "music",
+  "age": "teen",
   "prompt": "Who is known as the King of Rock and Roll?",
   "choices": [
    "Chuck Berry",
@@ -722,6 +782,7 @@
  {
   "id": "sports-001",
   "category": "sports",
+  "age": "kids",
   "prompt": "How many players does a soccer team have on the field?",
   "choices": [
    "9",
@@ -734,6 +795,7 @@
  {
   "id": "sports-002",
   "category": "sports",
+  "age": "teen",
   "prompt": "How many points is a touchdown worth in American football?",
   "choices": [
    "3",
@@ -746,6 +808,7 @@
  {
   "id": "sports-003",
   "category": "sports",
+  "age": "teen",
   "prompt": "Which country has won the most FIFA World Cups?",
   "choices": [
    "Germany",
@@ -758,6 +821,7 @@
  {
   "id": "sports-004",
   "category": "sports",
+  "age": "teen",
   "prompt": "In tennis, what is a score of zero called?",
   "choices": [
    "Nil",
@@ -770,6 +834,7 @@
  {
   "id": "sports-005",
   "category": "sports",
+  "age": "teen",
   "prompt": "How many holes are in a standard round of golf?",
   "choices": [
    "9",
@@ -782,6 +847,7 @@
  {
   "id": "sports-006",
   "category": "sports",
+  "age": "kids",
   "prompt": "How many rings are on the Olympic flag?",
   "choices": [
    "4",
@@ -794,6 +860,7 @@
  {
   "id": "sports-007",
   "category": "sports",
+  "age": "teen",
   "prompt": "How high is a regulation basketball hoop?",
   "choices": [
    "8 feet",
@@ -806,6 +873,7 @@
  {
   "id": "sports-008",
   "category": "sports",
+  "age": "kids",
   "prompt": "Which sport uses a shuttlecock?",
   "choices": [
    "Squash",
@@ -818,6 +886,7 @@
  {
   "id": "sports-009",
   "category": "sports",
+  "age": "teen",
   "prompt": "Roughly how long is a marathon?",
   "choices": [
    "26.2 miles",
@@ -830,6 +899,7 @@
  {
   "id": "sports-010",
   "category": "sports",
+  "age": "kids",
   "prompt": "In which sport would you perform a slam dunk?",
   "choices": [
    "Volleyball",
@@ -842,6 +912,7 @@
  {
   "id": "food-001",
   "category": "food",
+  "age": "kids",
   "prompt": "What is the main ingredient in guacamole?",
   "choices": [
    "Avocado",
@@ -854,6 +925,7 @@
  {
   "id": "food-002",
   "category": "food",
+  "age": "teen",
   "prompt": "Which country does paella come from?",
   "choices": [
    "Mexico",
@@ -866,6 +938,7 @@
  {
   "id": "food-003",
   "category": "food",
+  "age": "teen",
   "prompt": "Which nut is used to make marzipan?",
   "choices": [
    "Walnut",
@@ -878,6 +951,7 @@
  {
   "id": "food-004",
   "category": "food",
+  "age": "teen",
   "prompt": "Which spice is the most expensive by weight?",
   "choices": [
    "Vanilla",
@@ -890,6 +964,7 @@
  {
   "id": "food-005",
   "category": "food",
+  "age": "adult",
   "prompt": "What is the main ingredient in hummus?",
   "choices": [
    "Lentils",
@@ -902,6 +977,7 @@
  {
   "id": "food-006",
   "category": "food",
+  "age": "teen",
   "prompt": "Which gas makes bread dough rise?",
   "choices": [
    "Oxygen",
@@ -914,6 +990,7 @@
  {
   "id": "food-007",
   "category": "food",
+  "age": "teen",
   "prompt": "Sushi is often wrapped in what?",
   "choices": [
    "Rice paper",
@@ -926,6 +1003,7 @@
  {
   "id": "food-008",
   "category": "food",
+  "age": "teen",
   "prompt": "What is tofu made from?",
   "choices": [
    "Rice",
@@ -938,6 +1016,7 @@
  {
   "id": "food-009",
   "category": "food",
+  "age": "adult",
   "prompt": "Which fruit is most commonly used to make wine?",
   "choices": [
    "Apples",
@@ -950,6 +1029,7 @@
  {
   "id": "food-010",
   "category": "food",
+  "age": "kids",
   "prompt": "Which country is the home of sushi?",
   "choices": [
    "China",
@@ -962,6 +1042,7 @@
  {
   "id": "tech-001",
   "category": "tech",
+  "age": "teen",
   "prompt": "What does CPU stand for?",
   "choices": [
    "Central Processing Unit",
@@ -974,6 +1055,7 @@
  {
   "id": "tech-002",
   "category": "tech",
+  "age": "adult",
   "prompt": "What does HTTP stand for?",
   "choices": [
    "High Tech Transfer Protocol",
@@ -986,6 +1068,7 @@
  {
   "id": "tech-003",
   "category": "tech",
+  "age": "teen",
   "prompt": "Which company develops the Android operating system?",
   "choices": [
    "Apple",
@@ -998,6 +1081,7 @@
  {
   "id": "tech-004",
   "category": "tech",
+  "age": "teen",
   "prompt": "How many bits are in a byte?",
   "choices": [
    "4",
@@ -1010,6 +1094,7 @@
  {
   "id": "tech-005",
   "category": "tech",
+  "age": "kids",
   "prompt": "In which game do players mine blocks and avoid creepers?",
   "choices": [
    "Roblox",
@@ -1022,6 +1107,7 @@
  {
   "id": "tech-006",
   "category": "tech",
+  "age": "teen",
   "prompt": "What does RAM stand for?",
   "choices": [
    "Read Access Memory",
@@ -1034,6 +1120,7 @@
  {
   "id": "tech-007",
   "category": "tech",
+  "age": "teen",
   "prompt": "In which year was the first iPhone released?",
   "choices": [
    "2005",
@@ -1046,6 +1133,7 @@
  {
   "id": "tech-008",
   "category": "tech",
+  "age": "teen",
   "prompt": "What is 1010 in binary as a regular number?",
   "choices": [
    "8",
@@ -1058,6 +1146,7 @@
  {
   "id": "tech-009",
   "category": "tech",
+  "age": "teen",
   "prompt": "What does USB stand for?",
   "choices": [
    "Universal Serial Bus",
@@ -1070,6 +1159,7 @@
  {
   "id": "tech-010",
   "category": "tech",
+  "age": "kids",
   "prompt": "Which company makes the PlayStation?",
   "choices": [
    "Nintendo",

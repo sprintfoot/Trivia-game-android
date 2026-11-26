@@ -15,6 +15,18 @@ This is **phase 1: the one-phone game**. Multiplayer rooms with join codes come 
 - **Haptics** on taps, ticks, right and wrong answers (Capacitor Haptics on Android, `navigator.vibrate` on the web).
 - **Settings**: sound, music, vibration, and graphics quality (Auto drops to Low on slow phones).
 
+## Playing on a TV
+
+- **Android TV / Google TV:** install the APK on the TV (it shows up in the TV's app row). Use the remote's arrows and OK button, or press 1–4 on a keyboard to answer and H for a hint.
+- **Phone or tablet + TV:** turn the phone sideways (the layout switches to landscape) and cast or mirror the screen to the TV. The app runs full screen with the system bars hidden.
+- **Laptop + HDMI:** run the web version, press the ⛶ full-screen button on the title screen.
+
+## Game options
+
+- Pick any mix of categories, 2–6 rounds, 3/5/7/10 questions per round, and a 10–30 second timer.
+- **Most players are:** Kids (6–10), Teens (11–15) or Adults. Kids only get kid-friendly questions; teens never get adult ones.
+- **50/50 hints:** Off, 1, 3 or 5 per game. A hint removes two wrong answers but halves that question's points.
+
 ## Run it
 
 ```bash
