@@ -4,6 +4,8 @@ import { CATEGORIES } from '../src/game/categories';
 import { scoreAnswer, SCORING } from '../src/game/scoring';
 import { GameSession, mulberry32, type GameConfig } from '../src/game/session';
 import { decideTeamAnswer, makeRoomCode } from '../src/game/teams';
+import { isMatch, normalize } from '../src/game/match';
+import { AVATARS, avatarSvg } from '../src/game/avatars';
 
 const config = (over: Partial<GameConfig> = {}): GameConfig => ({
   categories: ['science', 'history', 'music'],
@@ -19,10 +21,17 @@ describe('question bank', () => {
     for (const q of BANK) {
       expect(ids.has(q.id)).toBe(false);
       ids.add(q.id);
-      expect(q.choices).toHaveLength(4);
-      expect(new Set(q.choices).size).toBe(4);
-      expect(q.answer).toBeGreaterThanOrEqual(0);
-      expect(q.answer).toBeLessThan(4);
+      if (q.accept) {
+        // Fill in the blank: one shown answer, which is also accepted.
+        expect(q.choices).toHaveLength(1);
+        expect(q.answer).toBe(0);
+        expect(isMatch(q.choices[0], q.accept)).toBe(true);
+      } else {
+        expect(q.choices).toHaveLength(4);
+        expect(new Set(q.choices).size).toBe(4);
+        expect(q.answer).toBeGreaterThanOrEqual(0);
+        expect(q.answer).toBeLessThan(4);
+      }
       expect(['kids', 'teen', 'adult']).toContain(q.age);
       expect(CATEGORIES.some((c) => c.id === q.category)).toBe(true);
     }
@@ -127,7 +136,7 @@ describe('picture questions', () => {
   it('builds flag, emoji and zoom rounds with four distinct choices', () => {
     const pics = BANK.filter((q) => q.picture && q.picture.kind !== 'tune');
     expect(pics.length).toBeGreaterThanOrEqual(80);
-    expect(new Set(pics.map((q) => q.picture!.kind))).toEqual(new Set(['flag', 'emoji', 'zoom']));
+    expect(new Set(pics.map((q) => q.picture!.kind))).toEqual(new Set(['flag', 'emoji', 'zoom', 'shadow', 'pixel']));
     for (const q of pics) {
       expect(q.category).toBe('pictures');
       expect(new Set(q.choices).size).toBe(4);
@@ -295,7 +304,7 @@ describe('host playing along', async () => {
     ];
     const me = host.addLocal('Craig')!;
     expect(me.local).toBe(true);
-    expect(host.publicTeams().flatMap((t) => t.members)).toEqual([{ id: me.id, name: 'Craig', online: true }]);
+    expect(host.publicTeams().flatMap((t) => t.members)).toMatchObject([{ id: me.id, name: 'Craig', online: true }]);
     host.moveLocal('t2');
     expect(host.localPlayer!.teamId).toBe('t2');
 
@@ -333,5 +342,40 @@ describe('recorded host voice', async () => {
   it('records named lines for every category and team', () => {
     expect(lineVariants('category').some((t) => t.includes('Name That Tune'))).toBe(true);
     expect(lineVariants('winner').some((t) => t.includes('Neon Ninjas'))).toBe(true);
+  });
+});
+
+describe('fill in the blank', () => {
+  it('matches typed answers forgivingly', () => {
+    expect(isMatch('paris', ['Paris'])).toBe(true);
+    expect(isMatch('  PARIS! ', ['Paris'])).toBe(true);
+    expect(isMatch('the pacific', ['Pacific'])).toBe(true);
+    expect(isMatch('Shakespere', ['Shakespeare'])).toBe(true);
+    expect(isMatch('photosyntesis', ['photosynthesis'])).toBe(true);
+    expect(isMatch('eight', ['8'])).toBe(true);
+    expect(isMatch('8', ['eight'])).toBe(true);
+    expect(isMatch('9', ['8', 'eight'])).toBe(false);
+    expect(isMatch('cat', ['bat'])).toBe(false);
+    expect(isMatch('London', ['Paris'])).toBe(false);
+    expect(isMatch('', ['Paris'])).toBe(false);
+    expect(isMatch('butterflies', ['butterfly'])).toBe(true);
+    expect(normalize('Café & Co.')).toBe('cafeandco');
+  });
+
+  it('never offers a 50/50 on a typed question', () => {
+    const s = new GameSession({ categories: ['blanks'], rounds: 1, questionsPerRound: 3, timeLimitMs: 10000, hints: 3 }, BANK, mulberry32(4));
+    s.startRound();
+    const q = s.nextQuestion();
+    expect(q.accept).toBeDefined();
+    expect(s.canUseHint()).toBe(false);
+    expect(s.submit(0, 5000).correct).toBe(true);
+  });
+});
+
+describe('avatars', () => {
+  it('has distinct avatars that draw in every mood', () => {
+    expect(new Set(AVATARS.map((a) => a.id)).size).toBe(AVATARS.length);
+    expect(AVATARS.length).toBeGreaterThanOrEqual(12);
+    for (const a of AVATARS) for (const mood of ['idle', 'happy', 'sad'] as const) expect(avatarSvg(a.id, mood)).toMatch(/^<svg[\s\S]*<\/svg>$/);
   });
 });

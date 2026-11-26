@@ -60,12 +60,22 @@ Type your name. In team games, tap the team you want to be on (you're placed on 
 
 ## Picture Reveal rounds
 
-The **Picture Reveal** category (89 questions) has three kinds of picture that uncover while the clock runs, so faster guesses score more:
+The **Picture Reveal** category (125 questions) has five kinds of picture that uncover while the clock runs, so faster guesses score more:
 - **Flags:** a 6×4 grid of tiles flips away to reveal a country's flag.
 - **Emoji movies:** emoji clues pop in one by one and spell out a film (🦁👑 → The Lion King).
 - **Zoom out:** starts zoomed right into an animal and slowly pulls back.
+- **Shadows:** a black silhouette that slowly fills in with color.
+- **Pixels:** starts as a handful of giant pixels and sharpens step by step.
 
 No photos, movie stills or brand logos are bundled, because those are copyrighted. Flags are drawn from the MIT-licensed [flag-icons](https://github.com/lipis/flag-icons) project (licence in `src/assets/flags/LICENSE`), and emoji come from the phone's own emoji font. In party games, the picture shows on the TV and phones show the answer buttons.
+
+## Fill in the Blank
+
+The **Fill in the Blank** category has no answer buttons: you type the missing word. In a party game everyone types on their phone and sees teammates' guesses. If most of a team gets it right, the team scores. Matching is forgiving: case, accents, punctuation, "the/a/an" and a small typo are all fine, and numbers can be typed as digits or words ("8" or "eight").
+
+## Avatars
+
+When you join, pick one of 16 original cartoon characters. Your character shows in the lobby and along the bottom of the TV, with a ✓ once you've answered. Get it right and your character cheers. Get it wrong (or run out of time) and it takes a tomato to the face or a bop on the head with a cartoon mallet, on the TV and on your phone.
 
 ## Name That Tune
 

@@ -20,6 +20,10 @@ export function pictureHtml(p: Picture): string {
       return `<div class="pic pic-emoji">${p.clues.map((c) => `<span>${c}</span>`).join('')}</div>`;
     case 'zoom':
       return `<div class="pic pic-zoom"><span style="transform-origin:${p.x * 100}% ${p.y * 100}%">${p.emoji}</span></div>`;
+    case 'shadow':
+      return `<div class="pic pic-shadow"><span>${p.emoji}</span></div>`;
+    case 'pixel':
+      return `<div class="pic pic-pixel"><canvas width="240" height="240"></canvas></div>`;
     case 'tune':
       return `<div class="pic pic-tune"><div class="vinyl"><b></b></div>
         <div class="eq">${Array.from({ length: 7 }, (_, i) => `<i style="--i:${i}"></i>`).join('')}</div>
@@ -68,6 +72,39 @@ export function startReveal(root: HTMLElement, p: Picture, durationMs: number): 
   }
 
   if (p.kind === 'tune') return startTune(root, p.id);
+
+  if (p.kind === 'shadow') {
+    const span = root.querySelector<HTMLElement>('.pic-shadow span')!;
+    // Stays a silhouette for a while, then the color seeps in.
+    at(durationMs * 0.35, () => {
+      span.style.transition = `filter ${durationMs * 0.4}ms ease-in`;
+      span.classList.add('lit');
+    });
+    return {
+      finish: () => {
+        timers.forEach(clearTimeout);
+        span.style.transition = 'filter 0.4s';
+        span.classList.add('lit');
+      },
+    };
+  }
+
+  if (p.kind === 'pixel') {
+    const canvas = root.querySelector<HTMLCanvasElement>('.pic-pixel canvas')!;
+    const steps = [5, 7, 10, 14, 20, 28, 40, 64, 240];
+    const draw = (res: number) => drawPixelated(canvas, p.emoji, res);
+    draw(steps[0]);
+    steps.forEach((res, n) => n && at((n / (steps.length - 1)) * span, () => {
+      draw(res);
+      if (n < steps.length - 1) sound.tileFlip();
+    }));
+    return {
+      finish: () => {
+        timers.forEach(clearTimeout);
+        draw(240);
+      },
+    };
+  }
 
   const emoji = root.querySelector<HTMLElement>('.pic-zoom span')!;
   emoji.style.transition = 'none';
@@ -126,4 +163,20 @@ function startTune(root: HTMLElement, id: string): { finish: () => void } {
       sound.holdMusic(false);
     },
   };
+}
+
+/** Draws an emoji at a low resolution, then blows it up with hard pixel edges. */
+function drawPixelated(canvas: HTMLCanvasElement, emoji: string, res: number): void {
+  const size = canvas.width;
+  const small = document.createElement('canvas');
+  small.width = small.height = res;
+  const sc = small.getContext('2d')!;
+  sc.textAlign = 'center';
+  sc.textBaseline = 'middle';
+  sc.font = `${res * 0.82}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+  sc.fillText(emoji, res / 2, res * 0.54);
+  const ctx = canvas.getContext('2d')!;
+  ctx.clearRect(0, 0, size, size);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(small, 0, 0, size, size);
 }

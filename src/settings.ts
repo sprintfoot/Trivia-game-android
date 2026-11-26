@@ -18,6 +18,7 @@ export interface Settings {
   teamMode: 'teams' | 'players';
   teamCount: number;
   playerName: string;
+  avatar: string;
   bestScore: number;
 }
 
@@ -39,6 +40,7 @@ const DEFAULTS: Settings = {
   teamMode: 'teams',
   teamCount: 2,
   playerName: '',
+  avatar: '',
   bestScore: 0,
 };
 

@@ -4,13 +4,15 @@ import type { AnswerResult, LiveQuestion, TeamScore } from '../game/session';
 import type { PartyHost } from '../net/host';
 import { joinUrl } from '../net/protocol';
 import { sound } from '../audio/sound';
-import { countUp, esc, mount, press, wait } from './ui';
+import { countUp, esc, mount, press, revealTyped, typeAnswerHtml, wait } from './ui';
 import { pictureHtml, startReveal } from './picture';
+import { avatarHtml, crowdHtml, markVoted, reactCrowd } from './avatarFx';
+import type { PublicTeam } from '../net/protocol';
 
 // ---------------- Lobby ----------------
 
 /** The TV's lobby: room code, QR code and who's on which team. Resolves when the host taps Start. */
-export function showLobby(host: PartyHost, hostName: string): { started: Promise<'start' | 'back'>; refresh: () => void } {
+export function showLobby(host: PartyHost, hostName: string, hostAvatar?: string): { started: Promise<'start' | 'back'>; refresh: () => void } {
   const url = joinUrl(host.code);
   const el = mount(
     `<div class="lobby">
@@ -45,7 +47,7 @@ export function showLobby(host: PartyHost, hostName: string): { started: Promise
   const localBtn = el.querySelector<HTMLButtonElement>('[data-local]')!;
   press(localBtn, () => {
     if (host.localPlayer) host.removeLocal();
-    else host.addLocal(hostName);
+    else host.addLocal(hostName, hostAvatar);
   });
   teamsEl.addEventListener('click', (e) => {
     const card = (e.target as HTMLElement).closest<HTMLElement>('.team-card[data-team]');
@@ -67,7 +69,7 @@ export function showLobby(host: PartyHost, hostName: string): { started: Promise
               <div class="team-name">${esc(t.name)}</div>
               <div class="members">${
                 t.members.length
-                  ? t.members.map((m) => `<span class="member ${m.online ? '' : 'away'} ${m.id === host.localPlayer?.id ? 'me' : ''}">${m.id === host.localPlayer?.id ? '📺 ' : ''}${esc(m.name)}</span>`).join('')
+                  ? t.members.map((m) => `<span class="member ${m.online ? '' : 'away'} ${m.id === host.localPlayer?.id ? 'me' : ''}">${avatarHtml(m.avatar, 'happy')}${m.id === host.localPlayer?.id ? '📺 ' : ''}${esc(m.name)}</span>`).join('')
                   : '<span class="empty">Waiting for players…</span>'
               }</div>
             </div>`,
@@ -100,11 +102,14 @@ export interface TvQuestionHooks {
   onTick: (urgency: number) => void;
   /** Checked every frame: end the question early once every team has answered. */
   allAnswered: () => boolean;
+  /** Everyone's avatars, shown along the bottom of the TV. */
+  crowd?: readonly PublicTeam[];
   /** Set when the host is playing along: answers on the host screen are sent here. */
   local?: {
     name: string;
     hintsLeft: number;
     onPick: (choice: number) => void;
+    onGuess: (text: string) => void;
     onHint: () => number[] | null;
   };
 }
@@ -129,7 +134,7 @@ export function tvQuestion(
   teams: readonly TeamScore[],
   info: { number: number; total: number; multiplier: number },
   hooks: TvQuestionHooks,
-): { done: Promise<void>; setLocked: (teamId: string, locked: boolean) => void; hide: (idx: number[]) => void } {
+): { done: Promise<void>; setLocked: (teamId: string, locked: boolean) => void; hide: (idx: number[]) => void; voted: (playerId: string) => void } {
   const local = hooks.local;
   const tag = local ? 'button' : 'div';
   const el = mount(
@@ -142,12 +147,18 @@ export function tvQuestion(
          <circle class="prog" cx="50" cy="50" r="44" stroke-dasharray="${RING}" stroke-dashoffset="0"/></svg>
          <span class="secs" data-secs>${Math.ceil(timeLimitMs / 1000)}</span></div>
        <div class="q-card ${q.picture ? 'has-pic' : ''}"><div class="q-cat">${cat.icon} ${esc(cat.name)}</div><div class="q-text">${esc(q.prompt)}</div>${q.picture ? pictureHtml(q.picture) : ''}</div>
-       <div class="answers">${q.choices
-         .map(
-           (c, i) =>
-             `<${tag} class="ans" data-i="${i}" style="--d:${i * 70}ms"${local && i === 0 ? ' data-focus' : ''}><span class="letter">${LETTERS[i]}</span><span class="txt">${esc(c)}</span><span class="badges"></span></${tag}>`,
-         )
-         .join('')}</div>
+       ${
+         q.accept
+           ? local
+             ? typeAnswerHtml(`${local.name}, type here`)
+             : typeAnswerHtml().replace(/<form[\s\S]*<\/form>/, '<p class="tv-type-note">✏️ Type your answer on your phone!</p>')
+           : `<div class="answers">${q.choices
+               .map(
+                 (c, i) =>
+                   `<${tag} class="ans" data-i="${i}" style="--d:${i * 70}ms"${local && i === 0 ? ' data-focus' : ''}><span class="letter">${LETTERS[i]}</span><span class="txt">${esc(c)}</span><span class="badges"></span></${tag}>`,
+               )
+               .join('')}</div>`
+       }
        ${
          local
            ? `<div class="tv-local"><span class="tv-hint">${esc(local.name)}, tap your answer!</span>${
@@ -155,7 +166,8 @@ export function tvQuestion(
              }</div>`
            : '<p class="tv-hint">Answer on your phone!</p>'
        }
-     </div>`,
+     </div>
+     ${hooks.crowd ? crowdHtml(hooks.crowd) : ''}`,
     'question party-q',
   );
   sound.whoosh();
@@ -182,7 +194,17 @@ export function tvQuestion(
       sound.click();
       local.onPick(i);
     };
-    el.querySelectorAll<HTMLButtonElement>('.ans').forEach((b) => b.addEventListener('click', () => pick(Number(b.dataset.i))));
+    el.querySelectorAll<HTMLButtonElement>('button.ans').forEach((b) => b.addEventListener('click', () => pick(Number(b.dataset.i))));
+    const form = el.querySelector<HTMLFormElement>('.type-form');
+    form?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const input = form.querySelector('input')!;
+      if (closed || !input.value.trim()) return;
+      sound.lockIn();
+      local.onGuess(input.value.trim());
+      el.querySelector('[data-typed]')!.textContent = `Your answer: ${input.value.trim()}`;
+      input.value = '';
+    });
     const hintBtn = el.querySelector<HTMLButtonElement>('[data-hint]');
     const hint = () => {
       if (closed || !hintBtn || hintBtn.disabled) return;
@@ -195,6 +217,7 @@ export function tvQuestion(
     };
     hintBtn?.addEventListener('click', hint);
     onKey = (e: KeyboardEvent) => {
+      if (q.accept) return;
       const k = e.key.toLowerCase();
       const idx = '1234'.indexOf(k) >= 0 ? '1234'.indexOf(k) : 'abcd'.indexOf(k);
       if (idx >= 0 && idx < q.choices.length) pick(idx);
@@ -232,7 +255,7 @@ export function tvQuestion(
         pic?.finish();
         closed = true;
         if (onKey) window.removeEventListener('keydown', onKey);
-        el.querySelectorAll<HTMLButtonElement>('button.ans, [data-hint]').forEach((b) => (b.disabled = true));
+        el.querySelectorAll<HTMLButtonElement | HTMLInputElement>('button.ans, [data-hint], .type-form input, .type-form button').forEach((b) => (b.disabled = true));
         resolve();
         return;
       }
@@ -240,20 +263,34 @@ export function tvQuestion(
     };
     requestAnimationFrame(loop);
   });
-  return { done, setLocked, hide };
+  return { done, setLocked, hide, voted: (playerId: string) => markVoted(el, playerId) };
 }
 
 /** Reveals the answer on the TV, with each team's pick and points. */
-export async function tvReveal(results: AnswerResult[], teams: readonly TeamScore[]): Promise<void> {
+export async function tvReveal(results: AnswerResult[], teams: readonly TeamScore[], typed?: Map<string, string | undefined>): Promise<void> {
   const el = document.querySelector('.party-q') as HTMLElement;
   const q = results[0].question;
   const buttons = el.querySelectorAll<HTMLElement>('.ans');
   buttons[q.answer].classList.add('correct');
+  if (typed) {
+    revealTyped(el, q.choices[q.answer]);
+    el.querySelector('.tv-type-note')?.remove();
+    const list = document.createElement('div');
+    list.className = 'typed-list';
+    list.innerHTML = results
+      .map((r) => {
+        const t = teams.find((x) => x.id === r.teamId)!;
+        const text = typed.get(r.teamId);
+        return `<span class="badge ${r.correct ? '' : 'wrong'}" style="--c:${t.color}">${esc(t.name)}: ${text ? `“${esc(text)}”` : '⏱'}</span>`;
+      })
+      .join('');
+    el.querySelector('.type-answers')?.appendChild(list);
+  }
   buttons.forEach((b, i) => {
     if (i !== q.answer) b.classList.add('dim');
   });
   for (const r of results) {
-    if (r.chosen === null) continue;
+    if (r.chosen === null || typed) continue;
     const t = teams.find((x) => x.id === r.teamId)!;
     const badge = document.createElement('span');
     badge.className = 'badge';
@@ -265,6 +302,7 @@ export async function tvReveal(results: AnswerResult[], teams: readonly TeamScor
   el.querySelector('.tv-hint')?.remove();
   el.querySelector('.tv-local')?.remove();
 
+  reactCrowd(el, new Map(results.map((r) => [r.teamId, r.correct])));
   const winners = results.filter((r) => r.correct);
   const pop = document.createElement('div');
   pop.className = `verdict ${winners.length ? 'good' : 'bad'}`;

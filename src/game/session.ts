@@ -25,7 +25,9 @@ export type Picture =
   | { kind: 'emoji'; clues: string[] }
   | { kind: 'zoom'; emoji: string; x: number; y: number }
   /** Not a picture but a melody the device plays, uncovered phrase by phrase. */
-  | { kind: 'tune'; id: string };
+  | { kind: 'tune'; id: string }
+  | { kind: 'shadow'; emoji: string }
+  | { kind: 'pixel'; emoji: string };
 
 export interface BankQuestion {
   id: string;
@@ -37,6 +39,8 @@ export interface BankQuestion {
   /** Index into choices of the correct answer. */
   answer: number;
   picture?: Picture;
+  /** Fill-in-the-blank: players type the answer; any of these (forgivingly matched) is right. */
+  accept?: string[];
 }
 
 /** A question as shown to a player: choices shuffled, answer index remapped. */
@@ -242,7 +246,7 @@ export class GameSession {
   }
 
   canUseHint(teamId = this.solo.id): boolean {
-    return this.team(teamId).hintsLeft > 0 && this.current !== null && !this.hidden.has(teamId);
+    return this.team(teamId).hintsLeft > 0 && this.current !== null && !this.current.accept && !this.hidden.has(teamId);
   }
 
   /** 50/50: hides two wrong answers on the current question for one team. Returns the hidden indices. */

@@ -18,6 +18,7 @@ export class PartyClient {
   constructor(
     readonly code: string,
     readonly name: string,
+    readonly avatar?: string,
   ) {
     this.playerId = sessionStorage.getItem(this.storeKey);
   }
@@ -62,7 +63,7 @@ export class PartyClient {
     this.conn = conn;
     conn.on('open', () => {
       this.setStatus('connected');
-      this.send({ t: 'hello', name: this.name, playerId: this.playerId ?? undefined });
+      this.send({ t: 'hello', name: this.name, playerId: this.playerId ?? undefined, avatar: this.avatar });
       onOpen?.();
     });
     conn.on('data', (raw) => {

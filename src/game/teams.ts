@@ -17,6 +17,8 @@ export interface Vote {
   choice: number;
   /** When the vote was cast (ms, host clock). */
   at: number;
+  /** What was typed, for fill-in-the-blank questions. */
+  text?: string;
 }
 
 export interface TeamDecision {

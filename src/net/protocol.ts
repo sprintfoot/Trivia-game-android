@@ -14,6 +14,7 @@ export interface PublicMember {
   id: string;
   name: string;
   online: boolean;
+  avatar: string;
 }
 
 export interface PublicTeam {
@@ -49,8 +50,10 @@ export type HostMsg =
       teamSize: number;
       /** The TV is showing a picture, or playing a tune, for this question. */
       media: 'picture' | 'tune' | null;
+      /** Fill in the blank: type the answer instead of picking one. */
+      typed: boolean;
     }
-  | { t: 'votes'; qid: number; votes: { playerId: string; name: string; choice: number }[]; decided: boolean }
+  | { t: 'votes'; qid: number; votes: { playerId: string; name: string; choice: number; text?: string }[]; decided: boolean }
   | { t: 'hint'; qid: number; hidden: number[]; hintsLeft: number }
   | {
       t: 'reveal';
@@ -67,9 +70,10 @@ export type HostMsg =
   | { t: 'bye'; reason: string };
 
 export type PlayerMsg =
-  | { t: 'hello'; name: string; playerId?: string }
+  | { t: 'hello'; name: string; playerId?: string; avatar?: string }
   | { t: 'team'; teamId: string }
   | { t: 'vote'; qid: number; choice: number }
+  | { t: 'guess'; qid: number; text: string }
   | { t: 'hint'; qid: number };
 
 export const PEER_PREFIX = 'trivia-party-room-';

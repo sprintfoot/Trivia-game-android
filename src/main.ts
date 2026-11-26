@@ -14,6 +14,8 @@ import { haptics, setHapticsEnabled } from './audio/haptics';
 import { voice } from './audio/voice';
 import { loadSettings, saveSettings, type Settings } from './settings';
 import * as ui from './ui/ui';
+import { isMatch } from './game/match';
+import { DEFAULT_AVATAR } from './game/avatars';
 
 const settings = loadSettings();
 const stage = new Stage(document.getElementById('stage') as HTMLCanvasElement, settings.quality);
@@ -91,7 +93,7 @@ async function playGame(config: GameConfig): Promise<'again' | 'setup'> {
         stage.fail();
         ui.flash('rgba(255,40,60,0.4)');
       }
-      await ui.showReveal(result, before, () => sound.points());
+      await ui.showReveal(result, before, () => sound.points(), pick.typed, settings.avatar || DEFAULT_AVATAR);
     }
   }
 
@@ -165,7 +167,7 @@ async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<voi
     stage.setMode('idle');
     stage.setAccent('#38e1ff');
     sound.setMusic('lobby');
-    const lobby = party.showLobby(host, settings.playerName?.trim() || 'Host');
+    const lobby = party.showLobby(host, settings.playerName?.trim() || 'Host', settings.avatar || undefined);
     host.events = { onLobby: lobby.refresh };
     host.lobbyChanged();
     if ((await lobby.started) === 'back') {
@@ -204,6 +206,8 @@ async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<voi
       while (session.hasNextQuestion()) {
         const q = session.nextQuestion();
         qid += 1;
+        const accept = q.accept;
+        host.matcher = accept ? (text) => isMatch(text, accept) : null;
         host.openQuestion(qid, config.timeLimitMs);
         const opened = performance.now();
         host.each((p) => ({
@@ -213,13 +217,15 @@ async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<voi
           total: session.totalQuestions,
           multiplier: session.multiplier,
           prompt: q.prompt,
-          choices: q.choices,
+          // Never send a fill-in-the-blank answer to the phones.
+          choices: q.accept ? [] : q.choices,
           category: pub(cat),
           durationMs: config.timeLimitMs,
           hidden: p.teamId ? session.hiddenFor(p.teamId) : [],
-          hintsLeft: p.teamId && session.teams.some((t) => t.id === p.teamId) ? session.team(p.teamId).hintsLeft : 0,
+          hintsLeft: !q.accept && p.teamId && session.teams.some((t) => t.id === p.teamId) ? session.team(p.teamId).hintsLeft : 0,
           teamSize: p.teamId ? host.membersOf(p.teamId).length : 1,
           media: q.picture ? (q.picture.kind === 'tune' ? 'tune' : 'picture') : null,
+          typed: !!q.accept,
         }));
 
         if (q.picture?.kind !== 'tune') voice.question(q.prompt, q.choices);
@@ -238,12 +244,14 @@ async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<voi
             },
             onTick: (u) => sound.clockTick(u),
             allAnswered: () => host.allVoted(),
+            crowd: host.publicTeams().filter((t) => session.teams.some((s) => s.id === t.id)),
             local:
               me && myTeam
                 ? {
                     name: me.name,
-                    hintsLeft: session.team(myTeam).hintsLeft,
+                    hintsLeft: q.accept ? 0 : session.team(myTeam).hintsLeft,
                     onPick: (i) => host.localVote(i),
+                    onGuess: (text) => host.localGuess(text),
                     onHint: () => host.localHint()?.hidden ?? null,
                   }
                 : undefined,
@@ -251,9 +259,13 @@ async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<voi
         );
         tvNow = tv;
         if (myTeam) tv.hide(session.hiddenFor(myTeam));
-        host.events.onVote = (teamId) => tv.setLocked(teamId, host.teamDecided(teamId));
+        host.events.onVote = (teamId, playerId) => {
+          tv.setLocked(teamId, host.teamDecided(teamId));
+          tv.voted(playerId);
+        };
         await tv.done;
         host.closeQuestion();
+        host.matcher = null;
         host.events.onVote = undefined;
 
         const leaderBefore = session.standings()[0];
@@ -295,7 +307,11 @@ async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<voi
             teams: teamsPub,
           };
         });
-        await party.tvReveal(results, session.teams);
+        await party.tvReveal(
+          results,
+          session.teams,
+          q.accept ? new Map(results.map((r) => [r.teamId, host.teamText(r.teamId, r.chosen)])) : undefined,
+        );
       }
 
       if (session.teams.length > 1 && session.hasNextRound()) {
@@ -338,7 +354,7 @@ async function joinParty(presetCode = ''): Promise<void> {
       return;
     }
     code = form.code;
-    const client = new PartyClient(form.code, form.name);
+    const client = new PartyClient(form.code, form.name, form.avatar);
     try {
       await client.connect();
     } catch (e) {
