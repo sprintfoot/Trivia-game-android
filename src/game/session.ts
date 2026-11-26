@@ -58,7 +58,7 @@ export function isTyped(q: Pick<BankQuestion, 'accept' | 'estimate'>): boolean {
 
 /** Reads a typed number: "1,200", "1200", "1.2k", "about 300". */
 export function parseGuess(text: string): number | null {
-  const m = /-?\d[\d,]*(\.\d+)?\s*(k|thousand|m|million|b|billion)?/i.exec(text.replace(/\s+/g, ' '));
+  const m = /-?\d[\d,]*(\.\d+)?\s*(k|thousand|m|million|b|billion)?\b/i.exec(text.replace(/\s+/g, ' '));
   if (!m) return null;
   let n = Number(m[0].replace(/[^\d.-]/g, ''));
   const unit = (m[2] ?? '').toLowerCase();
@@ -90,6 +90,8 @@ export interface GameConfig {
   lightning?: boolean;
   /** End with one question where teams bet their points. */
   finalWager?: boolean;
+  /** Mix the chosen categories question by question instead of one category per round. */
+  mixCategories?: boolean;
 }
 
 export interface TeamInfo {
@@ -169,6 +171,8 @@ export class GameSession {
   private readonly kinds: RoundKind[];
   private readonly wagers = new Map<string, number>();
   private readonly byCategory = new Map<CategoryId, BankQuestion[]>();
+  private mixDeck: CategoryId[] = [];
+  private lastMixed: CategoryId | null = null;
 
   constructor(
     config: GameConfig,
@@ -241,6 +245,11 @@ export class GameSession {
     return kind === 'lightning' ? LIGHTNING.questions : kind === 'wager' ? 1 : this.config.questionsPerRound;
   }
 
+  /** True when normal rounds serve questions from all the chosen categories, mixed together. */
+  get mixed(): boolean {
+    return !!this.config.mixCategories && this.config.categories.length > 1;
+  }
+
   get currentRound(): number {
     return this.round;
   }
@@ -305,7 +314,7 @@ export class GameSession {
         ? this.drawFrom(shuffle(this.config.categories, this.rng), (x) => x.choices.length === 4 && !x.picture && !isTyped(x))
         : kind === 'wager'
           ? this.drawFrom([category, ...this.config.categories], (x) => !x.estimate && x.picture?.kind !== 'tune')
-          : this.draw(category);
+          : this.draw(this.mixed ? this.nextMixedCategory() : category);
     this.questionInRound += 1;
     this.questionCount += 1;
     this.hidden = new Map();
@@ -387,7 +396,7 @@ export class GameSession {
       });
       const wager = wagerRound ? this.wagerOf(team.id) : undefined;
       if (wager !== undefined) {
-        const delta = correct ? wager : -Math.min(wager, team.score);
+        const delta = correct ? wager : 0 - Math.min(wager, team.score);
         score = { base: wager, speed: 0, streak: 0, multiplier: 1, hinted: false, total: delta };
       }
 
@@ -419,6 +428,16 @@ export class GameSession {
       plan.push(deck.shift()!);
     }
     return plan;
+  }
+
+  /** Deals categories like cards: each chosen one comes up once per pass, never twice in a row. */
+  private nextMixedCategory(): CategoryId {
+    if (this.mixDeck.length === 0) {
+      this.mixDeck = shuffle(this.config.categories, this.rng);
+      if (this.mixDeck.length > 1 && this.mixDeck[0] === this.lastMixed) this.mixDeck.push(this.mixDeck.shift()!);
+    }
+    this.lastMixed = this.mixDeck.shift()!;
+    return this.lastMixed;
   }
 
   /** Takes the first question matching `ok` from the first of these categories that has one. */

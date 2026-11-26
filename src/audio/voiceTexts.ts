@@ -29,7 +29,7 @@ export function lineVariants(key: LineKey): string[] {
     if (t.includes('{category}')) CATEGORIES.forEach((c) => out.push(render(t, { category: c.name })));
     else if (t.includes('{team}')) TEAM_PRESETS.forEach((team) => out.push(render(t, { team: team.name })));
     else if (t.includes('{n}')) {
-      const ns = key === 'round' ? ROUND_NUMBERS : Array.from({ length: STREAK_MAX - 2 }, (_, i) => i + 3);
+      const ns = key === 'round' || key === 'mixedRound' ? ROUND_NUMBERS : Array.from({ length: STREAK_MAX - 2 }, (_, i) => i + 3);
       ns.forEach((n) => out.push(render(t, { n })));
     } else out.push(t);
   }

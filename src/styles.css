@@ -2481,3 +2481,34 @@ button:focus-visible {
   .pic-shadow span { font-size: min(14vh, 110px); }
   .pic-pixel canvas { width: min(18vh, 140px); height: min(18vh, 140px); }
 }
+
+/* ---------- mixed rounds ---------- */
+.mix-icons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  max-width: min(92vw, 720px);
+  margin: 18px auto 0;
+}
+.mix-icons span {
+  display: grid;
+  place-items: center;
+  width: clamp(44px, 8vh, 64px);
+  height: clamp(44px, 8vh, 64px);
+  font-size: clamp(24px, 4.4vh, 34px);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 2px solid var(--c);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--c) 55%, transparent);
+  animation: mix-pop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) both, mix-bob 1.6s ease-in-out infinite alternate;
+  animation-delay: calc(var(--i) * 90ms), calc(0.5s + var(--i) * 120ms);
+}
+@keyframes mix-pop {
+  from { transform: scale(0) rotate(-90deg); opacity: 0; }
+  to { transform: scale(1) rotate(0); opacity: 1; }
+}
+@keyframes mix-bob {
+  from { transform: translateY(0); }
+  to { transform: translateY(-6px); }
+}

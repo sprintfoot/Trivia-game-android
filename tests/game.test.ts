@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { BANK } from '../src/data/bank';
 import { CATEGORIES } from '../src/game/categories';
 import { scoreAnswer, SCORING } from '../src/game/scoring';
-import { GameSession, mulberry32, type GameConfig } from '../src/game/session';
+import { GameSession, mulberry32, parseGuess, type GameConfig } from '../src/game/session';
 import { decideTeamAnswer, makeRoomCode } from '../src/game/teams';
 import { isMatch, normalize } from '../src/game/match';
 import { AVATARS, avatarSvg } from '../src/game/avatars';
@@ -26,6 +26,14 @@ describe('question bank', () => {
         expect(q.choices).toHaveLength(1);
         expect(q.answer).toBe(0);
         expect(isMatch(q.choices[0], q.accept)).toBe(true);
+      } else if (q.estimate) {
+        // Closest guess: the shown answer is the number itself.
+        expect(q.choices).toHaveLength(1);
+        expect(parseGuess(q.choices[0])).toBe(q.estimate.value);
+      } else if (q.fixedOrder) {
+        // Real or made up: two answers in a fixed order.
+        expect(q.choices).toEqual(['Real', 'Made up']);
+        expect([0, 1]).toContain(q.answer);
       } else {
         expect(q.choices).toHaveLength(4);
         expect(new Set(q.choices).size).toBe(4);
@@ -377,5 +385,114 @@ describe('avatars', () => {
     expect(new Set(AVATARS.map((a) => a.id)).size).toBe(AVATARS.length);
     expect(AVATARS.length).toBeGreaterThanOrEqual(12);
     for (const a of AVATARS) for (const mood of ['idle', 'happy', 'sad'] as const) expect(avatarSvg(a.id, mood)).toMatch(/^<svg[\s\S]*<\/svg>$/);
+  });
+});
+
+describe('new round types', () => {
+  it('reads typed numbers', () => {
+    expect(parseGuess('1,200')).toBe(1200);
+    expect(parseGuess('about 300')).toBe(300);
+    expect(parseGuess('1.5k')).toBe(1500);
+    expect(parseGuess('2 million')).toBe(2_000_000);
+    expect(parseGuess('no idea')).toBeNull();
+  });
+
+  it('scores a closest guess within 10%, and the closest team', () => {
+    const solo = new GameSession(config({ categories: ['estimate'], rounds: 1 }), BANK, mulberry32(3));
+    solo.startRound();
+    let q = solo.nextQuestion();
+    expect(solo.submit(0, 5000, q.estimate!.value * 1.05).correct).toBe(true);
+    q = solo.nextQuestion();
+    expect(solo.submit(0, 5000, q.estimate!.value * 2 + 10).correct).toBe(false);
+
+    const teams = new GameSession(config({ categories: ['estimate'], rounds: 1 }), BANK, mulberry32(4), [
+      { id: 'a', name: 'A', color: '#f00' },
+      { id: 'b', name: 'B', color: '#0f0' },
+    ]);
+    teams.startRound();
+    const v = teams.nextQuestion().estimate!.value;
+    const [a, b] = teams.submitAll([
+      { teamId: 'a', chosen: 0, timeLeftMs: 5000, guess: v * 3 + 10 },
+      { teamId: 'b', chosen: 0, timeLeftMs: 5000, guess: v * 5 + 10 },
+    ]);
+    expect(a.correct).toBe(true);
+    expect(b.correct).toBe(false);
+  });
+
+  it('adds a lightning round before the final round and a wager at the end', () => {
+    const s = new GameSession(config({ rounds: 3, lightning: true, finalWager: true }), BANK, mulberry32(5));
+    expect(s.totalRounds).toBe(5);
+    const kinds: string[] = [];
+    const finals: boolean[] = [];
+    while (s.hasNextRound()) {
+      s.startRound();
+      kinds.push(s.roundKind);
+      finals.push(s.isFinalRound);
+      if (s.roundKind === 'lightning') expect(s.timeLimitMs).toBe(8000);
+      if (s.roundKind === 'wager') s.setWager('solo', 400);
+      while (s.hasNextQuestion()) {
+        const q = s.nextQuestion();
+        if (s.roundKind === 'lightning') expect(q.choices).toHaveLength(4);
+        s.submit(q.answer, 15000);
+      }
+    }
+    expect(kinds).toEqual(['normal', 'normal', 'lightning', 'normal', 'wager']);
+    expect(finals).toEqual([false, false, false, true, false]);
+    expect(s.history.at(-1)!.score.total).toBe(400);
+  });
+
+  it('caps wagers at the score, with a floor of 500, and loses them on a wrong answer', () => {
+    const s = new GameSession(config({ rounds: 1, questionsPerRound: 1, finalWager: true }), BANK, mulberry32(6));
+    s.startRound();
+    s.nextQuestion();
+    s.submit(null, 0);
+    expect(s.maxWager()).toBe(500);
+    expect(s.setWager('solo', 9999)).toBe(500);
+    s.startRound();
+    expect(s.roundKind).toBe('wager');
+    s.setWager('solo', 300);
+    const q = s.nextQuestion();
+    const r = s.submit((q.answer + 1) % q.choices.length, 5000);
+    expect(r.correct).toBe(false);
+    // Can't lose more than you have.
+    expect(r.score.total).toBe(0);
+  });
+
+  it('does not read units as multipliers', () => {
+    expect(parseGuess('206 bones')).toBe(206);
+    expect(parseGuess('330 meters')).toBe(330);
+  });
+});
+
+describe('mixed categories', () => {
+  it('mixes the chosen categories inside each round, never the same one twice in a row', () => {
+    const cats = config().categories;
+    const s = new GameSession(config({ rounds: 2, questionsPerRound: 6, mixCategories: true }), BANK, mulberry32(7));
+    expect(s.mixed).toBe(true);
+    for (let r = 0; r < 2; r++) {
+      s.startRound();
+      const seen: string[] = [];
+      while (s.hasNextQuestion()) {
+        seen.push(s.nextQuestion().category);
+        s.submit(null, 0);
+      }
+      // Each pass deals every category once, so six questions show all three, twice each.
+      for (const c of cats) expect(seen.filter((x) => x === c)).toHaveLength(2);
+      for (let i = 1; i < seen.length; i++) expect(seen[i]).not.toBe(seen[i - 1]);
+    }
+  });
+
+  it('keeps one category per round when mixing is off', () => {
+    const s = new GameSession(config({ questionsPerRound: 4 }), BANK, mulberry32(8));
+    expect(s.mixed).toBe(false);
+    const cat = s.startRound();
+    while (s.hasNextQuestion()) {
+      expect(s.nextQuestion().category).toBe(cat);
+      s.submit(null, 0);
+    }
+  });
+
+  it('is not mixed with a single category', () => {
+    expect(new GameSession(config({ categories: ['science'], mixCategories: true }), BANK).mixed).toBe(false);
   });
 });

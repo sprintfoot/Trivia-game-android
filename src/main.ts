@@ -54,6 +54,7 @@ async function playGame(config: GameConfig): Promise<'again' | 'setup'> {
     while (session.hasNextQuestion()) {
       const q = session.nextQuestion();
       const qcat = catFor(session, cat, q);
+      if (qcat !== cat) stage.setAccent(qcat.color);
       const hud: ui.Hud = {
         score: session.score,
         streak: session.streak,
@@ -137,9 +138,12 @@ const pub = (c: Category): PublicCategory => ({ name: c.name, icon: c.icon, colo
 /** Stands in for a category during the lightning round, whose questions come from all of them. */
 const LIGHTNING_CAT: Category = { id: 'general', name: 'Lightning Round', icon: '⚡', color: '#ffe14d' };
 
-/** The category to show with a question: its own one in the lightning round. */
+/** Stands in for a category during a mixed round, whose questions come from all of them. */
+const MIXED_CAT: Category = { id: 'general', name: 'Mixed Round', icon: '🔀', color: '#38e1ff' };
+
+/** The category to show with a question: its own one when the round mixes categories. */
 const catFor = (session: GameSession, roundCat: Category, q: { category: CategoryId }): Category =>
-  session.roundKind === 'lightning' ? getCategory(q.category) : roundCat;
+  session.roundKind === 'lightning' || (session.roundKind === 'normal' && session.mixed) ? getCategory(q.category) : roundCat;
 
 async function spinForRound(session: GameSession, host: PartyHost | null): Promise<Category> {
   const catId = session.startRound();
@@ -154,7 +158,15 @@ async function spinForRound(session: GameSession, host: PartyHost | null): Promi
     screen: 'wheel',
     text: kind === 'lightning' ? '⚡ Lightning round!' : kind === 'wager' ? '🎲 Final wager!' : final ? 'Final round! Double points!' : `Round ${session.currentRound}`,
   });
-  ui.showRoundBanner(session.currentRound, session.totalRounds, final, kind);
+  const mixed = kind === 'normal' && session.mixed;
+  ui.showRoundBanner(session.currentRound, session.totalRounds, final, kind, mixed ? session.config.categories.map(getCategory) : null);
+  if (mixed) {
+    if (final) voice.line('finalRound');
+    else if (session.currentRound > 1) voice.line('mixedRound', { n: session.currentRound });
+    else voice.line('mixed');
+    await ui.wait(2600);
+    return MIXED_CAT;
+  }
   if (kind === 'lightning') {
     voice.line('lightning');
     sound.introStinger();
@@ -233,6 +245,7 @@ async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<voi
       while (session.hasNextQuestion()) {
         const q = session.nextQuestion();
         const qcat = catFor(session, cat, q);
+        if (qcat !== cat) stage.setAccent(qcat.color);
         qid += 1;
         const accept = q.accept;
         host.matcher = accept ? (text) => isMatch(text, accept) : q.estimate ? (text) => parseGuess(text) !== null : null;

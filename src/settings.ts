@@ -17,6 +17,7 @@ export interface Settings {
   hints: number;
   lightning: boolean;
   finalWager: boolean;
+  mixCategories: boolean;
   teamMode: 'teams' | 'players';
   teamCount: number;
   playerName: string;
@@ -41,6 +42,7 @@ const DEFAULTS: Settings = {
   hints: 3,
   lightning: true,
   finalWager: true,
+  mixCategories: true,
   teamMode: 'teams',
   teamCount: 2,
   playerName: '',

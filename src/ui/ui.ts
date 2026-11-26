@@ -170,6 +170,11 @@ export function showSetup(settings: Settings, onSettings: () => void, party = fa
        <h3>Answer timer</h3>${segmented('time', TIME_OPTIONS, vals.time, (o) => `${o}s`)}
        <h3>50/50 hints per game</h3>${segmented('hints', HINT_OPTIONS, vals.hints, (o) => (o === 0 ? 'Off' : String(o)))}
        <p class="hint">A hint removes two wrong answers but halves that question's points. The last round is worth double.</p>
+       <h3>Question order</h3>
+       <div class="chips specials">
+         <button class="chip ${settings.mixCategories ? 'on' : ''}" data-special="mixCategories" style="--c:#38e1ff"><span class="ico">🔀</span>Mix categories</button>
+       </div>
+       <p class="hint">On: every round mixes your categories, one question at a time. Off: spin the wheel for one category per round.</p>
        <h3>Special rounds</h3>
        <div class="chips specials">
          <button class="chip ${settings.lightning ? 'on' : ''}" data-special="lightning" style="--c:#ffe14d"><span class="ico">⚡</span>Lightning round</button>
@@ -217,7 +222,7 @@ export function showSetup(settings: Settings, onSettings: () => void, party = fa
       }),
     );
   });
-  const specials = { lightning: settings.lightning, finalWager: settings.finalWager };
+  const specials = { lightning: settings.lightning, finalWager: settings.finalWager, mixCategories: settings.mixCategories };
   el.querySelectorAll<HTMLElement>('[data-special]').forEach((b) =>
     b.addEventListener('click', () => {
       const key = b.dataset.special as keyof typeof specials;
@@ -232,6 +237,7 @@ export function showSetup(settings: Settings, onSettings: () => void, party = fa
     press(startBtn, () => {
       settings.lightning = specials.lightning;
       settings.finalWager = specials.finalWager;
+      settings.mixCategories = specials.mixCategories;
       // Keep wheel order consistent with the category list.
       const categories = CATEGORIES.filter((c) => chosen.has(c.id)).map((c) => c.id);
       settings.lastCategories = categories;
@@ -254,6 +260,7 @@ export function showSetup(settings: Settings, onSettings: () => void, party = fa
         hints: vals.hints,
         lightning: specials.lightning,
         finalWager: specials.finalWager,
+        mixCategories: specials.mixCategories,
       });
     });
   });
@@ -261,7 +268,13 @@ export function showSetup(settings: Settings, onSettings: () => void, party = fa
 
 // ---------------- Round intro & wheel ----------------
 
-export function showRoundBanner(round: number, total: number, final: boolean, kind: 'normal' | 'lightning' | 'wager' = 'normal'): void {
+export function showRoundBanner(
+  round: number,
+  total: number,
+  final: boolean,
+  kind: 'normal' | 'lightning' | 'wager' = 'normal',
+  mixed: readonly Category[] | null = null,
+): void {
   const label = kind === 'lightning' ? '⚡ LIGHTNING ROUND' : kind === 'wager' ? '🎲 FINAL WAGER' : final ? 'FINAL ROUND' : `ROUND ${round}`;
   const sub =
     kind === 'lightning' ? '5 quick questions · 8 seconds each' : kind === 'wager' ? 'One question. Bet your points!' : final ? 'Double points!' : `of ${total}`;
@@ -270,7 +283,12 @@ export function showRoundBanner(round: number, total: number, final: boolean, ki
        <div class="round-label">${label}</div>
        <div class="round-sub">${sub}</div>
      </div>
-     <p class="spin-hint">${kind === 'lightning' ? 'Questions from all your categories!' : 'Spinning for a category…'}</p>`,
+     ${
+       mixed && kind === 'normal'
+         ? `<div class="mix-icons">${mixed.map((c, i) => `<span style="--c:${c.color};--i:${i}">${c.icon}</span>`).join('')}</div>
+            <p class="spin-hint">A mix of all your categories!</p>`
+         : `<p class="spin-hint">${kind === 'lightning' ? 'Questions from all your categories!' : 'Spinning for a category…'}</p>`
+     }`,
     'wheel-screen',
   );
 }
