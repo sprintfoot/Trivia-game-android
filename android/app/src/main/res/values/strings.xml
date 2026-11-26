@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Trivia Party</string>
+    <string name="title_activity_main">Trivia Party</string>
+    <string name="package_name">com.sprintfoot.triviaparty</string>
+    <string name="custom_url_scheme">com.sprintfoot.triviaparty</string>
+</resources>

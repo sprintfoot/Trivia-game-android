@@ -1,0 +1,56 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install
+        run: npm ci
+
+      - name: Test
+        run: npm test
+
+      - name: Build web game and copy into the Android project
+        run: npm run android:sync
+
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      # Published as a release download rather than a workflow artifact: releases are easy to
+      # open on a phone and don't count against the account's Actions artifact storage quota.
+      - name: Publish APK to the "latest-build" pre-release
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk trivia-party.apk
+          NOTES="Debug build from ${GITHUB_HEAD_REF:-$GITHUB_REF_NAME} at ${BUILD_SHA::7}. Download trivia-party.apk on your phone to install."
+          if gh release view latest-build >/dev/null 2>&1; then
+            gh release upload latest-build trivia-party.apk --clobber
+            gh release edit latest-build --notes "$NOTES"
+          else
+            gh release create latest-build trivia-party.apk --prerelease --title "Latest test build" --notes "$NOTES" --target "$BUILD_SHA"
+          fi

@@ -1,0 +1,1082 @@
+[
+ {
+  "id": "general-001",
+  "category": "general",
+  "prompt": "How many sides does a hexagon have?",
+  "choices": [
+   "5",
+   "6",
+   "7",
+   "8"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "general-002",
+  "category": "general",
+  "prompt": "What colour do you get by mixing blue and yellow paint?",
+  "choices": [
+   "Purple",
+   "Orange",
+   "Green",
+   "Brown"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "general-003",
+  "category": "general",
+  "prompt": "How many minutes are in a full day?",
+  "choices": [
+   "1,240",
+   "1,440",
+   "1,600",
+   "2,400"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "general-004",
+  "category": "general",
+  "prompt": "Which planet is known as the Red Planet?",
+  "choices": [
+   "Venus",
+   "Jupiter",
+   "Mars",
+   "Mercury"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "general-005",
+  "category": "general",
+  "prompt": "What is the largest ocean on Earth?",
+  "choices": [
+   "Atlantic",
+   "Indian",
+   "Arctic",
+   "Pacific"
+  ],
+  "answer": 3
+ },
+ {
+  "id": "general-006",
+  "category": "general",
+  "prompt": "What is the hardest natural substance?",
+  "choices": [
+   "Gold",
+   "Iron",
+   "Diamond",
+   "Quartz"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "general-007",
+  "category": "general",
+  "prompt": "At what temperature does water freeze in Fahrenheit?",
+  "choices": [
+   "0°F",
+   "32°F",
+   "50°F",
+   "100°F"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "general-008",
+  "category": "general",
+  "prompt": "How many continents are there?",
+  "choices": [
+   "5",
+   "6",
+   "7",
+   "8"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "general-009",
+  "category": "general",
+  "prompt": "Which is the tallest animal in the world?",
+  "choices": [
+   "Elephant",
+   "Giraffe",
+   "Ostrich",
+   "Moose"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "general-010",
+  "category": "general",
+  "prompt": "How many hours are in a week?",
+  "choices": [
+   "148",
+   "158",
+   "168",
+   "178"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "science-001",
+  "category": "science",
+  "prompt": "What is the chemical symbol for gold?",
+  "choices": [
+   "Ag",
+   "Au",
+   "Gd",
+   "Go"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "science-002",
+  "category": "science",
+  "prompt": "Which gas do plants absorb from the air to make food?",
+  "choices": [
+   "Oxygen",
+   "Nitrogen",
+   "Carbon dioxide",
+   "Helium"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "science-003",
+  "category": "science",
+  "prompt": "Which part of the cell is known as its powerhouse?",
+  "choices": [
+   "Nucleus",
+   "Mitochondria",
+   "Ribosome",
+   "Membrane"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "science-004",
+  "category": "science",
+  "prompt": "How many bones are in the adult human body?",
+  "choices": [
+   "186",
+   "206",
+   "226",
+   "306"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "science-005",
+  "category": "science",
+  "prompt": "Roughly how fast does light travel?",
+  "choices": [
+   "300 km/s",
+   "3,000 km/s",
+   "300,000 km/s",
+   "3,000,000 km/s"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "science-006",
+  "category": "science",
+  "prompt": "Which particle carries a negative charge?",
+  "choices": [
+   "Proton",
+   "Neutron",
+   "Electron",
+   "Photon"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "science-007",
+  "category": "science",
+  "prompt": "What is the largest organ of the human body?",
+  "choices": [
+   "Liver",
+   "Brain",
+   "Lungs",
+   "Skin"
+  ],
+  "answer": 3
+ },
+ {
+  "id": "science-008",
+  "category": "science",
+  "prompt": "Which force keeps us on the ground?",
+  "choices": [
+   "Magnetism",
+   "Friction",
+   "Gravity",
+   "Inertia"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "science-009",
+  "category": "science",
+  "prompt": "What is the closest star to Earth?",
+  "choices": [
+   "Proxima Centauri",
+   "Sirius",
+   "The Sun",
+   "Polaris"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "science-010",
+  "category": "science",
+  "prompt": "What is H₂O more commonly called?",
+  "choices": [
+   "Salt",
+   "Water",
+   "Hydrogen peroxide",
+   "Ammonia"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "history-001",
+  "category": "history",
+  "prompt": "In which year did World War II end?",
+  "choices": [
+   "1918",
+   "1939",
+   "1945",
+   "1950"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "history-002",
+  "category": "history",
+  "prompt": "Who was the first President of the United States?",
+  "choices": [
+   "Abraham Lincoln",
+   "Thomas Jefferson",
+   "John Adams",
+   "George Washington"
+  ],
+  "answer": 3
+ },
+ {
+  "id": "history-003",
+  "category": "history",
+  "prompt": "Which civilisation built Machu Picchu?",
+  "choices": [
+   "Aztec",
+   "Maya",
+   "Inca",
+   "Olmec"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "history-004",
+  "category": "history",
+  "prompt": "In which year did humans first land on the Moon?",
+  "choices": [
+   "1959",
+   "1965",
+   "1969",
+   "1972"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "history-005",
+  "category": "history",
+  "prompt": "In which year did the Berlin Wall fall?",
+  "choices": [
+   "1979",
+   "1989",
+   "1991",
+   "1999"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "history-006",
+  "category": "history",
+  "prompt": "Who was the first woman to fly solo across the Atlantic?",
+  "choices": [
+   "Amelia Earhart",
+   "Bessie Coleman",
+   "Harriet Quimby",
+   "Jacqueline Cochran"
+  ],
+  "answer": 0
+ },
+ {
+  "id": "history-007",
+  "category": "history",
+  "prompt": "Julius Caesar was a leader of which ancient civilisation?",
+  "choices": [
+   "Greece",
+   "Egypt",
+   "Rome",
+   "Persia"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "history-008",
+  "category": "history",
+  "prompt": "In which year did the Titanic sink?",
+  "choices": [
+   "1905",
+   "1912",
+   "1918",
+   "1923"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "history-009",
+  "category": "history",
+  "prompt": "Which ancient wonder still stands today?",
+  "choices": [
+   "Colossus of Rhodes",
+   "Great Pyramid of Giza",
+   "Hanging Gardens of Babylon",
+   "Lighthouse of Alexandria"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "history-010",
+  "category": "history",
+  "prompt": "Who painted the Mona Lisa?",
+  "choices": [
+   "Michelangelo",
+   "Raphael",
+   "Leonardo da Vinci",
+   "Rembrandt"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "geography-001",
+  "category": "geography",
+  "prompt": "What is the capital of Australia?",
+  "choices": [
+   "Sydney",
+   "Melbourne",
+   "Canberra",
+   "Perth"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "geography-002",
+  "category": "geography",
+  "prompt": "Which country has the largest population?",
+  "choices": [
+   "China",
+   "India",
+   "United States",
+   "Indonesia"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "geography-003",
+  "category": "geography",
+  "prompt": "Mount Everest sits on the border of Nepal and which country?",
+  "choices": [
+   "India",
+   "Bhutan",
+   "China",
+   "Pakistan"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "geography-004",
+  "category": "geography",
+  "prompt": "What is the capital of Canada?",
+  "choices": [
+   "Toronto",
+   "Ottawa",
+   "Vancouver",
+   "Montreal"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "geography-005",
+  "category": "geography",
+  "prompt": "What is the largest hot desert in the world?",
+  "choices": [
+   "Gobi",
+   "Kalahari",
+   "Sahara",
+   "Mojave"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "geography-006",
+  "category": "geography",
+  "prompt": "How many states are in the USA?",
+  "choices": [
+   "48",
+   "50",
+   "51",
+   "52"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "geography-007",
+  "category": "geography",
+  "prompt": "Which country is shaped like a boot?",
+  "choices": [
+   "Greece",
+   "Spain",
+   "Portugal",
+   "Italy"
+  ],
+  "answer": 3
+ },
+ {
+  "id": "geography-008",
+  "category": "geography",
+  "prompt": "What is the smallest country in the world by area?",
+  "choices": [
+   "Monaco",
+   "Vatican City",
+   "San Marino",
+   "Malta"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "geography-009",
+  "category": "geography",
+  "prompt": "What is the capital of Japan?",
+  "choices": [
+   "Osaka",
+   "Kyoto",
+   "Tokyo",
+   "Hiroshima"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "geography-010",
+  "category": "geography",
+  "prompt": "Which is the largest country by area?",
+  "choices": [
+   "Canada",
+   "China",
+   "USA",
+   "Russia"
+  ],
+  "answer": 3
+ },
+ {
+  "id": "screen-001",
+  "category": "screen",
+  "prompt": "Who directed the 1975 film Jaws?",
+  "choices": [
+   "George Lucas",
+   "Steven Spielberg",
+   "Martin Scorsese",
+   "Ridley Scott"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "screen-002",
+  "category": "screen",
+  "prompt": "What is the name of the cowboy toy in Toy Story?",
+  "choices": [
+   "Buzz",
+   "Woody",
+   "Jessie",
+   "Rex"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "screen-003",
+  "category": "screen",
+  "prompt": "What colour are Dorothy's slippers in the 1939 film The Wizard of Oz?",
+  "choices": [
+   "Silver",
+   "Gold",
+   "Ruby red",
+   "Emerald green"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "screen-004",
+  "category": "screen",
+  "prompt": "Which film features the line \"I'll be back\"?",
+  "choices": [
+   "Predator",
+   "RoboCop",
+   "The Terminator",
+   "Die Hard"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "screen-005",
+  "category": "screen",
+  "prompt": "Which TV show is set around the Central Perk coffee shop?",
+  "choices": [
+   "Seinfeld",
+   "Friends",
+   "How I Met Your Mother",
+   "Frasier"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "screen-006",
+  "category": "screen",
+  "prompt": "Ellen Ripley is the hero of which film series?",
+  "choices": [
+   "Alien",
+   "Star Wars",
+   "Terminator",
+   "Jurassic Park"
+  ],
+  "answer": 0
+ },
+ {
+  "id": "screen-007",
+  "category": "screen",
+  "prompt": "In Breaking Bad, what subject did Walter White teach?",
+  "choices": [
+   "Physics",
+   "Biology",
+   "Maths",
+   "Chemistry"
+  ],
+  "answer": 3
+ },
+ {
+  "id": "screen-008",
+  "category": "screen",
+  "prompt": "What kind of animal is Simba in The Lion King?",
+  "choices": [
+   "Tiger",
+   "Lion",
+   "Cheetah",
+   "Leopard"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "screen-009",
+  "category": "screen",
+  "prompt": "Which school does Harry Potter attend?",
+  "choices": [
+   "Hogwarts",
+   "Durmstrang",
+   "Beauxbatons",
+   "Brakebills"
+  ],
+  "answer": 0
+ },
+ {
+  "id": "screen-010",
+  "category": "screen",
+  "prompt": "What is the name of the hidden nation in Black Panther?",
+  "choices": [
+   "Genovia",
+   "Zamunda",
+   "Wakanda",
+   "Latveria"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "music-001",
+  "category": "music",
+  "prompt": "How many strings does a standard guitar have?",
+  "choices": [
+   "4",
+   "5",
+   "6",
+   "7"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "music-002",
+  "category": "music",
+  "prompt": "Which band recorded \"Hey Jude\"?",
+  "choices": [
+   "The Rolling Stones",
+   "The Beatles",
+   "The Who",
+   "The Kinks"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "music-003",
+  "category": "music",
+  "prompt": "Who is known as the King of Pop?",
+  "choices": [
+   "Prince",
+   "Elvis Presley",
+   "Michael Jackson",
+   "Justin Timberlake"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "music-004",
+  "category": "music",
+  "prompt": "How many keys are on a standard piano?",
+  "choices": [
+   "76",
+   "82",
+   "88",
+   "96"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "music-005",
+  "category": "music",
+  "prompt": "Which composer kept writing music after losing his hearing?",
+  "choices": [
+   "Mozart",
+   "Bach",
+   "Beethoven",
+   "Chopin"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "music-006",
+  "category": "music",
+  "prompt": "Freddie Mercury was the lead singer of which band?",
+  "choices": [
+   "Queen",
+   "Genesis",
+   "Aerosmith",
+   "Journey"
+  ],
+  "answer": 0
+ },
+ {
+  "id": "music-007",
+  "category": "music",
+  "prompt": "Who is known as the Queen of Soul?",
+  "choices": [
+   "Whitney Houston",
+   "Aretha Franklin",
+   "Diana Ross",
+   "Tina Turner"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "music-008",
+  "category": "music",
+  "prompt": "How many musicians play in a quartet?",
+  "choices": [
+   "3",
+   "4",
+   "5",
+   "6"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "music-009",
+  "category": "music",
+  "prompt": "What is the highest female singing voice?",
+  "choices": [
+   "Alto",
+   "Mezzo-soprano",
+   "Contralto",
+   "Soprano"
+  ],
+  "answer": 3
+ },
+ {
+  "id": "music-010",
+  "category": "music",
+  "prompt": "Who is known as the King of Rock and Roll?",
+  "choices": [
+   "Chuck Berry",
+   "Elvis Presley",
+   "Little Richard",
+   "Buddy Holly"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "sports-001",
+  "category": "sports",
+  "prompt": "How many players does a soccer team have on the field?",
+  "choices": [
+   "9",
+   "10",
+   "11",
+   "12"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "sports-002",
+  "category": "sports",
+  "prompt": "How many points is a touchdown worth in American football?",
+  "choices": [
+   "3",
+   "6",
+   "7",
+   "8"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "sports-003",
+  "category": "sports",
+  "prompt": "Which country has won the most FIFA World Cups?",
+  "choices": [
+   "Germany",
+   "Italy",
+   "Argentina",
+   "Brazil"
+  ],
+  "answer": 3
+ },
+ {
+  "id": "sports-004",
+  "category": "sports",
+  "prompt": "In tennis, what is a score of zero called?",
+  "choices": [
+   "Nil",
+   "Love",
+   "Duck",
+   "Zip"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "sports-005",
+  "category": "sports",
+  "prompt": "How many holes are in a standard round of golf?",
+  "choices": [
+   "9",
+   "12",
+   "18",
+   "21"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "sports-006",
+  "category": "sports",
+  "prompt": "How many rings are on the Olympic flag?",
+  "choices": [
+   "4",
+   "5",
+   "6",
+   "7"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "sports-007",
+  "category": "sports",
+  "prompt": "How high is a regulation basketball hoop?",
+  "choices": [
+   "8 feet",
+   "9 feet",
+   "10 feet",
+   "12 feet"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "sports-008",
+  "category": "sports",
+  "prompt": "Which sport uses a shuttlecock?",
+  "choices": [
+   "Squash",
+   "Badminton",
+   "Table tennis",
+   "Volleyball"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "sports-009",
+  "category": "sports",
+  "prompt": "Roughly how long is a marathon?",
+  "choices": [
+   "26.2 miles",
+   "20 miles",
+   "13.1 miles",
+   "30 miles"
+  ],
+  "answer": 0
+ },
+ {
+  "id": "sports-010",
+  "category": "sports",
+  "prompt": "In which sport would you perform a slam dunk?",
+  "choices": [
+   "Volleyball",
+   "Basketball",
+   "Handball",
+   "Netball"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "food-001",
+  "category": "food",
+  "prompt": "What is the main ingredient in guacamole?",
+  "choices": [
+   "Avocado",
+   "Pea",
+   "Lime",
+   "Cucumber"
+  ],
+  "answer": 0
+ },
+ {
+  "id": "food-002",
+  "category": "food",
+  "prompt": "Which country does paella come from?",
+  "choices": [
+   "Mexico",
+   "Italy",
+   "Spain",
+   "Portugal"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "food-003",
+  "category": "food",
+  "prompt": "Which nut is used to make marzipan?",
+  "choices": [
+   "Walnut",
+   "Cashew",
+   "Hazelnut",
+   "Almond"
+  ],
+  "answer": 3
+ },
+ {
+  "id": "food-004",
+  "category": "food",
+  "prompt": "Which spice is the most expensive by weight?",
+  "choices": [
+   "Vanilla",
+   "Saffron",
+   "Cardamom",
+   "Cinnamon"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "food-005",
+  "category": "food",
+  "prompt": "What is the main ingredient in hummus?",
+  "choices": [
+   "Lentils",
+   "Chickpeas",
+   "Fava beans",
+   "Peas"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "food-006",
+  "category": "food",
+  "prompt": "Which gas makes bread dough rise?",
+  "choices": [
+   "Oxygen",
+   "Nitrogen",
+   "Carbon dioxide",
+   "Hydrogen"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "food-007",
+  "category": "food",
+  "prompt": "Sushi is often wrapped in what?",
+  "choices": [
+   "Rice paper",
+   "Seaweed",
+   "Lettuce",
+   "Banana leaf"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "food-008",
+  "category": "food",
+  "prompt": "What is tofu made from?",
+  "choices": [
+   "Rice",
+   "Wheat",
+   "Soybeans",
+   "Corn"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "food-009",
+  "category": "food",
+  "prompt": "Which fruit is most commonly used to make wine?",
+  "choices": [
+   "Apples",
+   "Grapes",
+   "Plums",
+   "Cherries"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "food-010",
+  "category": "food",
+  "prompt": "Which country is the home of sushi?",
+  "choices": [
+   "China",
+   "Korea",
+   "Thailand",
+   "Japan"
+  ],
+  "answer": 3
+ },
+ {
+  "id": "tech-001",
+  "category": "tech",
+  "prompt": "What does CPU stand for?",
+  "choices": [
+   "Central Processing Unit",
+   "Computer Power Unit",
+   "Core Program Utility",
+   "Central Peripheral Unit"
+  ],
+  "answer": 0
+ },
+ {
+  "id": "tech-002",
+  "category": "tech",
+  "prompt": "What does HTTP stand for?",
+  "choices": [
+   "High Tech Transfer Protocol",
+   "HyperText Transfer Protocol",
+   "Hyperlink Text Tool Program",
+   "Home Terminal Transfer Port"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "tech-003",
+  "category": "tech",
+  "prompt": "Which company develops the Android operating system?",
+  "choices": [
+   "Apple",
+   "Microsoft",
+   "Google",
+   "Samsung"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "tech-004",
+  "category": "tech",
+  "prompt": "How many bits are in a byte?",
+  "choices": [
+   "4",
+   "8",
+   "16",
+   "32"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "tech-005",
+  "category": "tech",
+  "prompt": "In which game do players mine blocks and avoid creepers?",
+  "choices": [
+   "Roblox",
+   "Terraria",
+   "Minecraft",
+   "Fortnite"
+  ],
+  "answer": 2
+ },
+ {
+  "id": "tech-006",
+  "category": "tech",
+  "prompt": "What does RAM stand for?",
+  "choices": [
+   "Read Access Memory",
+   "Random Access Memory",
+   "Rapid Action Module",
+   "Run All Memory"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "tech-007",
+  "category": "tech",
+  "prompt": "In which year was the first iPhone released?",
+  "choices": [
+   "2005",
+   "2007",
+   "2009",
+   "2010"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "tech-008",
+  "category": "tech",
+  "prompt": "What is 1010 in binary as a regular number?",
+  "choices": [
+   "8",
+   "10",
+   "12",
+   "1010"
+  ],
+  "answer": 1
+ },
+ {
+  "id": "tech-009",
+  "category": "tech",
+  "prompt": "What does USB stand for?",
+  "choices": [
+   "Universal Serial Bus",
+   "Unified System Board",
+   "User Storage Bank",
+   "Ultra Speed Bridge"
+  ],
+  "answer": 0
+ },
+ {
+  "id": "tech-010",
+  "category": "tech",
+  "prompt": "Which company makes the PlayStation?",
+  "choices": [
+   "Nintendo",
+   "Microsoft",
+   "Sega",
+   "Sony"
+  ],
+  "answer": 3
+ }
+]
