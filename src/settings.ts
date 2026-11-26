@@ -1,5 +1,6 @@
 import type { Quality } from './scene/stage';
 import type { CategoryId } from './game/categories';
+import type { AgeGroup } from './game/session';
 
 export interface Settings {
   sound: boolean;
@@ -10,6 +11,11 @@ export interface Settings {
   rounds: number;
   questionsPerRound: number;
   timeLimitSec: number;
+  ageGroup: AgeGroup;
+  hints: number;
+  teamMode: 'teams' | 'players';
+  teamCount: number;
+  playerName: string;
   bestScore: number;
 }
 
@@ -24,6 +30,11 @@ const DEFAULTS: Settings = {
   rounds: 3,
   questionsPerRound: 3,
   timeLimitSec: 15,
+  ageGroup: 'adult',
+  hints: 3,
+  teamMode: 'teams',
+  teamCount: 2,
+  playerName: '',
   bestScore: 0,
 };
 

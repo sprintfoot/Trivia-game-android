@@ -1,13 +1,40 @@
 import type { CategoryId } from './categories';
+
+export type AgeGroup = 'kids' | 'teen' | 'adult';
+
+export const AGE_GROUPS: readonly { id: AgeGroup; label: string; detail: string }[] = [
+  { id: 'kids', label: 'Kids', detail: 'Ages 6–10' },
+  { id: 'teen', label: 'Teens', detail: 'Ages 11–15' },
+  { id: 'adult', label: 'Adults', detail: '16 and up' },
+];
+
+/** Which question age levels each group may see. */
+const ALLOWED: Record<AgeGroup, AgeGroup[]> = {
+  kids: ['kids'],
+  teen: ['kids', 'teen'],
+  adult: ['kids', 'teen', 'adult'],
+};
+
+/** Fewer suitable questions than this in a category and we fall back to the whole category. */
+const MIN_POOL = 4;
 import { SCORING, scoreAnswer, type ScoreBreakdown } from './scoring';
+
+/** A picture slowly uncovered during the question. Drawn on the device; no photos or logos. */
+export type Picture =
+  | { kind: 'flag'; code: string }
+  | { kind: 'emoji'; clues: string[] }
+  | { kind: 'zoom'; emoji: string; x: number; y: number };
 
 export interface BankQuestion {
   id: string;
   category: CategoryId;
+  /** Youngest age group the question suits. Missing means teen. */
+  age?: AgeGroup;
   prompt: string;
   choices: string[];
   /** Index into choices of the correct answer. */
   answer: number;
+  picture?: Picture;
 }
 
 /** A question as shown to a player: choices shuffled, answer index remapped. */
@@ -21,9 +48,34 @@ export interface GameConfig {
   rounds: number;
   questionsPerRound: number;
   timeLimitMs: number;
+  ageGroup?: AgeGroup;
+  /** 50/50 hints each team gets for the whole game. */
+  hints?: number;
+}
+
+export interface TeamInfo {
+  id: string;
+  name: string;
+  color: string;
+}
+
+export interface TeamScore extends TeamInfo {
+  score: number;
+  streak: number;
+  bestStreak: number;
+  correctCount: number;
+  hintsLeft: number;
+}
+
+/** One team's answer to the current question. chosen is null if they didn't answer in time. */
+export interface TeamPick {
+  teamId: string;
+  chosen: number | null;
+  timeLeftMs: number;
 }
 
 export interface AnswerResult {
+  teamId: string;
   question: LiveQuestion;
   chosen: number | null;
   correct: boolean;
@@ -54,33 +106,68 @@ export function shuffle<T>(items: readonly T[], rng: Rng): T[] {
   return a;
 }
 
-/** Runs one solo game: picks a category per round, serves questions, keeps score. */
+/**
+ * Runs one game: picks a category per round, serves questions and keeps score for one or more teams.
+ * A solo game is a game with a single team; the solo helpers (score, submit, useHint…) act on it.
+ */
 export class GameSession {
   readonly config: GameConfig;
   readonly roundCategories: CategoryId[];
-  score = 0;
-  streak = 0;
-  bestStreak = 0;
-  correctCount = 0;
+  readonly teams: TeamScore[];
   readonly history: AnswerResult[] = [];
 
   private round = 0;
   private questionInRound = 0;
+  private questionCount = 0;
   private current: LiveQuestion | null = null;
+  private hidden = new Map<string, number[]>();
   private readonly pools = new Map<CategoryId, BankQuestion[]>();
   private readonly byCategory = new Map<CategoryId, BankQuestion[]>();
 
-  constructor(config: GameConfig, bank: readonly BankQuestion[], private readonly rng: Rng = Math.random) {
+  constructor(
+    config: GameConfig,
+    bank: readonly BankQuestion[],
+    private readonly rng: Rng = Math.random,
+    teams: readonly TeamInfo[] = [{ id: 'solo', name: 'You', color: '#38e1ff' }],
+  ) {
     if (config.categories.length === 0) throw new Error('Pick at least one category');
+    if (teams.length === 0) throw new Error('Need at least one team');
     this.config = config;
+    this.teams = teams.map((t) => ({ ...t, score: 0, streak: 0, bestStreak: 0, correctCount: 0, hintsLeft: config.hints ?? 0 }));
+    const allowed = ALLOWED[config.ageGroup ?? 'adult'];
     for (const id of config.categories) {
-      const questions = bank.filter((q) => q.category === id);
-      if (questions.length === 0) throw new Error(`No questions for category: ${id}`);
+      const all = bank.filter((q) => q.category === id);
+      if (all.length === 0) throw new Error(`No questions for category: ${id}`);
+      const suitable = all.filter((q) => allowed.includes(q.age ?? 'teen'));
+      const questions = suitable.length >= MIN_POOL ? suitable : all;
       this.byCategory.set(id, questions);
       this.pools.set(id, shuffle(questions, rng));
     }
     this.roundCategories = this.planRounds();
   }
+
+  // ----- solo helpers (first team) -----
+
+  private get solo(): TeamScore {
+    return this.teams[0];
+  }
+  get score(): number {
+    return this.solo.score;
+  }
+  get streak(): number {
+    return this.solo.streak;
+  }
+  get bestStreak(): number {
+    return this.solo.bestStreak;
+  }
+  get correctCount(): number {
+    return this.solo.correctCount;
+  }
+  get hintsLeft(): number {
+    return this.solo.hintsLeft;
+  }
+
+  // ----- rounds and questions -----
 
   get totalRounds(): number {
     return this.config.rounds;
@@ -100,6 +187,10 @@ export class GameSession {
 
   get totalQuestions(): number {
     return this.config.rounds * this.config.questionsPerRound;
+  }
+
+  get currentQuestion(): LiveQuestion | null {
+    return this.current;
   }
 
   hasNextRound(): boolean {
@@ -122,41 +213,87 @@ export class GameSession {
     const category = this.roundCategories[this.round - 1];
     const q = this.draw(category);
     this.questionInRound += 1;
+    this.questionCount += 1;
+    this.hidden = new Map();
 
     const order = shuffle(q.choices.map((_, i) => i), this.rng);
     this.current = {
       ...q,
       choices: order.map((i) => q.choices[i]),
       answer: order.indexOf(q.answer),
-      number: this.history.length + 1,
+      number: this.questionCount,
       round: this.round,
     };
     return this.current;
   }
 
-  /** chosen is null when time ran out. */
+  // ----- hints -----
+
+  team(teamId: string): TeamScore {
+    const t = this.teams.find((x) => x.id === teamId);
+    if (!t) throw new Error(`Unknown team: ${teamId}`);
+    return t;
+  }
+
+  hiddenFor(teamId: string): number[] {
+    return this.hidden.get(teamId) ?? [];
+  }
+
+  canUseHint(teamId = this.solo.id): boolean {
+    return this.team(teamId).hintsLeft > 0 && this.current !== null && !this.hidden.has(teamId);
+  }
+
+  /** 50/50: hides two wrong answers on the current question for one team. Returns the hidden indices. */
+  useHint(teamId = this.solo.id): number[] {
+    const q = this.current;
+    if (!q || !this.canUseHint(teamId)) throw new Error('No hint available');
+    const wrong = q.choices.map((_, i) => i).filter((i) => i !== q.answer);
+    const hidden = shuffle(wrong, this.rng).slice(0, 2).sort();
+    this.hidden.set(teamId, hidden);
+    this.team(teamId).hintsLeft -= 1;
+    return hidden;
+  }
+
+  // ----- answers -----
+
+  /** Solo: chosen is null when time ran out. */
   submit(chosen: number | null, timeLeftMs: number): AnswerResult {
+    return this.submitAll([{ teamId: this.solo.id, chosen, timeLeftMs }])[0];
+  }
+
+  /** Scores every team on the current question. Teams with no pick count as out of time. */
+  submitAll(picks: readonly TeamPick[]): AnswerResult[] {
     const question = this.current;
     if (!question) throw new Error('No active question');
     this.current = null;
 
-    const correct = chosen === question.answer;
-    const score = scoreAnswer({
-      correct,
-      timeLeftMs: chosen === null ? 0 : timeLeftMs,
-      timeLimitMs: this.config.timeLimitMs,
-      streakBefore: this.streak,
-      multiplier: this.multiplier,
+    return this.teams.map((team) => {
+      const pick = picks.find((p) => p.teamId === team.id);
+      const chosen = pick?.chosen ?? null;
+      const correct = chosen === question.answer;
+      const score = scoreAnswer({
+        correct,
+        timeLeftMs: chosen === null ? 0 : (pick?.timeLeftMs ?? 0),
+        timeLimitMs: this.config.timeLimitMs,
+        streakBefore: team.streak,
+        multiplier: this.multiplier,
+        hinted: this.hidden.has(team.id),
+      });
+
+      team.streak = correct ? team.streak + 1 : 0;
+      team.bestStreak = Math.max(team.bestStreak, team.streak);
+      if (correct) team.correctCount += 1;
+      team.score += score.total;
+
+      const result: AnswerResult = { teamId: team.id, question, chosen, correct, score, streak: team.streak };
+      this.history.push(result);
+      return result;
     });
+  }
 
-    this.streak = correct ? this.streak + 1 : 0;
-    this.bestStreak = Math.max(this.bestStreak, this.streak);
-    if (correct) this.correctCount += 1;
-    this.score += score.total;
-
-    const result: AnswerResult = { question, chosen, correct, score, streak: this.streak };
-    this.history.push(result);
-    return result;
+  /** Teams sorted by score, best first. */
+  standings(): TeamScore[] {
+    return this.teams.slice().sort((a, b) => b.score - a.score || b.correctCount - a.correctCount);
   }
 
   /** Spread rounds across the chosen categories, avoiding back-to-back repeats where possible. */

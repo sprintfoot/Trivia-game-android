@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import bank from '../src/data/questions.json';
+import { BANK } from '../src/data/bank';
 import { CATEGORIES } from '../src/game/categories';
 import { scoreAnswer, SCORING } from '../src/game/scoring';
-import { GameSession, mulberry32, type BankQuestion, type GameConfig } from '../src/game/session';
+import { GameSession, mulberry32, type GameConfig } from '../src/game/session';
+import { decideTeamAnswer, makeRoomCode } from '../src/game/teams';
 
-const BANK = bank as BankQuestion[];
 const config = (over: Partial<GameConfig> = {}): GameConfig => ({
   categories: ['science', 'history', 'music'],
   rounds: 3,
@@ -23,9 +23,15 @@ describe('question bank', () => {
       expect(new Set(q.choices).size).toBe(4);
       expect(q.answer).toBeGreaterThanOrEqual(0);
       expect(q.answer).toBeLessThan(4);
+      expect(['kids', 'teen', 'adult']).toContain(q.age);
+      expect(CATEGORIES.some((c) => c.id === q.category)).toBe(true);
     }
+    expect(BANK.length).toBeGreaterThanOrEqual(380);
     for (const c of CATEGORIES) {
-      expect(BANK.filter((q) => q.category === c.id).length).toBeGreaterThanOrEqual(10);
+      const qs = BANK.filter((q) => q.category === c.id);
+      expect(qs.length).toBeGreaterThanOrEqual(15);
+      // Enough kid-friendly questions that kids games don't fall back to the full category.
+      expect(qs.filter((q) => q.age === 'kids').length).toBeGreaterThanOrEqual(4);
     }
   });
 });
@@ -114,5 +120,135 @@ describe('GameSession', () => {
       }
     }
     expect(seen.size).toBe(10);
+  });
+});
+
+describe('picture questions', () => {
+  it('builds flag, emoji and zoom rounds with four distinct choices', () => {
+    const pics = BANK.filter((q) => q.picture);
+    expect(pics.length).toBeGreaterThanOrEqual(80);
+    expect(new Set(pics.map((q) => q.picture!.kind))).toEqual(new Set(['flag', 'emoji', 'zoom']));
+    for (const q of pics) {
+      expect(q.category).toBe('pictures');
+      expect(new Set(q.choices).size).toBe(4);
+    }
+    const france = pics.find((q) => q.id === 'flag-fr')!;
+    expect(france.choices[france.answer]).toBe('France');
+  });
+});
+
+describe('age groups', () => {
+  it('only serves kids questions to kids when enough exist', () => {
+    const s = new GameSession(config({ categories: ['sports'], ageGroup: 'kids', rounds: 1, questionsPerRound: 4 }), BANK, mulberry32(5));
+    s.startRound();
+    while (s.hasNextQuestion()) {
+      const q = s.nextQuestion();
+      expect(q.age).toBe('kids');
+      s.submit(null, 0);
+    }
+  });
+
+  it('never serves adult questions to teens', () => {
+    const s = new GameSession(config({ categories: ['screen', 'food'], ageGroup: 'teen', rounds: 2, questionsPerRound: 5 }), BANK, mulberry32(8));
+    while (s.hasNextRound()) {
+      s.startRound();
+      while (s.hasNextQuestion()) {
+        expect(s.nextQuestion().age).not.toBe('adult');
+        s.submit(null, 0);
+      }
+    }
+  });
+});
+
+describe('hints', () => {
+  it('hides two wrong answers, halves the points and counts down', () => {
+    const s = new GameSession(config({ hints: 1 }), BANK, mulberry32(11));
+    s.startRound();
+    const q = s.nextQuestion();
+    expect(s.canUseHint()).toBe(true);
+    const hidden = s.useHint();
+    expect(hidden).toHaveLength(2);
+    expect(hidden).not.toContain(q.answer);
+    expect(s.hintsLeft).toBe(0);
+    expect(s.canUseHint()).toBe(false);
+    const r = s.submit(q.answer, 15000);
+    expect(r.score.hinted).toBe(true);
+    expect(r.score.total).toBe(500);
+    s.nextQuestion();
+    expect(s.canUseHint()).toBe(false);
+  });
+
+  it('has no hints by default', () => {
+    const s = new GameSession(config(), BANK, mulberry32(12));
+    s.startRound();
+    s.nextQuestion();
+    expect(s.canUseHint()).toBe(false);
+  });
+});
+
+describe('teams', () => {
+  const teams = [
+    { id: 'a', name: 'A', color: '#fff' },
+    { id: 'b', name: 'B', color: '#000' },
+  ];
+
+  it('scores each team separately and ranks them', () => {
+    const s = new GameSession(config({ hints: 1 }), BANK, mulberry32(21), teams);
+    s.startRound();
+    const q = s.nextQuestion();
+    s.useHint('b');
+    expect(s.hiddenFor('b')).toHaveLength(2);
+    expect(s.hiddenFor('a')).toHaveLength(0);
+    const wrong = (q.answer + 1) % 4;
+    const results = s.submitAll([
+      { teamId: 'a', chosen: wrong, timeLeftMs: 15000 },
+      { teamId: 'b', chosen: q.answer, timeLeftMs: 15000 },
+    ]);
+    expect(results.map((r) => r.correct)).toEqual([false, true]);
+    expect(s.team('b').score).toBe(500);
+    expect(s.team('a').score).toBe(0);
+    expect(s.standings()[0].id).toBe('b');
+  });
+
+  it('treats a team with no pick as out of time', () => {
+    const s = new GameSession(config(), BANK, mulberry32(22), teams);
+    s.startRound();
+    const q = s.nextQuestion();
+    const [a, b] = s.submitAll([{ teamId: 'a', chosen: q.answer, timeLeftMs: 0 }]);
+    expect(a.correct).toBe(true);
+    expect(b.chosen).toBeNull();
+    expect(b.score.total).toBe(0);
+  });
+});
+
+describe('decideTeamAnswer', () => {
+  it('picks the most popular latest vote, ties to the earliest', () => {
+    expect(decideTeamAnswer([])).toEqual({ choice: null, at: null });
+    expect(
+      decideTeamAnswer([
+        { playerId: 'p1', choice: 2, at: 100 },
+        { playerId: 'p2', choice: 1, at: 200 },
+      ]).choice,
+    ).toBe(2);
+    expect(
+      decideTeamAnswer([
+        { playerId: 'p1', choice: 2, at: 100 },
+        { playerId: 'p2', choice: 1, at: 200 },
+        { playerId: 'p3', choice: 1, at: 300 },
+      ]),
+    ).toEqual({ choice: 1, at: 300 });
+    // p1 changes their mind; only the latest vote counts.
+    expect(
+      decideTeamAnswer([
+        { playerId: 'p1', choice: 2, at: 100 },
+        { playerId: 'p2', choice: 1, at: 200 },
+        { playerId: 'p1', choice: 1, at: 250 },
+      ]).choice,
+    ).toBe(1);
+  });
+
+  it('makes readable room codes', () => {
+    const code = makeRoomCode(mulberry32(3));
+    expect(code).toMatch(/^[A-HJKMNP-Z]{4}$/);
   });
 });

@@ -167,6 +167,12 @@ export class Stage {
     this.renderer.setAnimationLoop(() => this.frame());
   }
 
+  /** Stops drawing (phones used as controllers don't need the 3D stage). */
+  setPaused(paused: boolean): void {
+    this.renderer.setAnimationLoop(paused ? null : () => this.frame());
+    this.renderer.domElement.style.visibility = paused ? 'hidden' : 'visible';
+  }
+
   setQuality(q: Quality): void {
     this.quality = q;
     this.fps = { frames: 0, elapsed: 0, checked: q !== 'auto' };
