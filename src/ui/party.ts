@@ -355,7 +355,7 @@ export async function tvScores(before: Map<string, number>, standings: readonly 
 }
 
 /** Final podium. */
-export function tvFinal(standings: readonly TeamScore[], soloPlayers = false): Promise<'again' | 'setup'> {
+export function tvFinal(standings: readonly TeamScore[], soloPlayers = false, awards = ''): Promise<'again' | 'setup'> {
   const [first] = standings;
   const tie = standings.length > 1 && standings[1].score === first.score;
   const el = mount(
@@ -371,6 +371,7 @@ export function tvFinal(standings: readonly TeamScore[], soloPlayers = false): P
            </div>`,
          )
          .join('')}</div>
+       ${awards}
      </div>
      <footer class="foot two">
        <button class="btn ghost" data-setup>NEW GAME</button>

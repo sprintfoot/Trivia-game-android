@@ -137,7 +137,7 @@ export class Controller {
         this.reveal(m);
         break;
       case 'final':
-        this.final(m.teams);
+        this.final(m.teams, m.awards ?? []);
         break;
       case 'bye':
         this.waitScreen('Game over', `${m.reason} Tap 🏠 to go back to the start.`);
@@ -349,10 +349,11 @@ export class Controller {
     if (av) react(av, m.correct ? 'cheer' : wrongReaction(), 150);
   }
 
-  private final(teams: PublicTeam[]): void {
+  private final(teams: PublicTeam[], awards: { icon: string; title: string; why: string; teamId: string }[]): void {
     const sorted = teams.slice().sort((a, b) => b.score - a.score);
     const rank = sorted.findIndex((t) => t.id === this.teamId) + 1;
     if (rank === 1) sound.fanfare();
+    const mine = awards.filter((a) => a.teamId === this.teamId);
     mount(
       `<div class="ctl">
          <div class="ctl-big">${rank === 1 ? 'YOU WIN! 🏆' : `${ordinal(rank)} place`}</div>
@@ -361,6 +362,13 @@ export class Controller {
              (t, i) => `<div class="ctl-row ${t.id === this.teamId ? 'me' : ''}" style="--c:${t.color}"><span>${i + 1}. ${esc(t.name)}</span><b>${t.score.toLocaleString()}</b></div>`,
            )
            .join('')}</div>
+         ${
+           mine.length
+             ? `<div class="awards ctl-awards">${mine
+                 .map((a) => `<div class="award"><div class="aw-ico">${esc(a.icon)}</div><div class="aw-txt"><b>${esc(a.title)}</b><span>${esc(a.why)}</span></div></div>`)
+                 .join('')}</div>`
+             : ''
+         }
          <p class="ctl-sub">Stay on this screen for a rematch.</p>
        </div>`,
       'ctl-screen',

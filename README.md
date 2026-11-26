@@ -129,6 +129,12 @@ Setup steps are at the top of `scripts/voice/gen.py`. A test fails if any line i
 
 All music is original and synthesised live in the app: a game-show theme on the title and setup screens, a "here we go" fanfare when a game starts, and adaptive music during questions that speeds up as the timer runs down.
 
+## Hall of Fame and awards
+
+Every finished game is saved on the device. **🏆 Hall of Fame** on the title screen shows the top 10 scores (solo and party), lifetime stats, a trophy case and your best and weakest categories.
+
+At the end of a game, players and teams earn fun awards: ⚡ Speed Demon, 🔥 On Fire, 🧠 Big Brain, ⏱️ Clutch, 🌩️ Storm Chaser, 🎯 Sharpshooter, 🎲 High Roller, 🙌 No Help Needed, and a champ award for the best category. In a party game they show on the TV and on each winner's phone.
+
 ## Getting home
 
 Tap 🏠 in the top-left corner (or press Back or Escape) to return to the title screen. During a game you're asked first. If you're hosting, this closes the room and every phone is told the game ended. On a phone it leaves the room, and before the game starts your name is removed from the lobby.
