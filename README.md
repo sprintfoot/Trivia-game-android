@@ -8,7 +8,7 @@ This is **phase 1: the one-phone game**. Multiplayer rooms with join codes come 
 
 - **3D neon game-show stage** (three.js): sweeping spotlights, light beams, neon arches, a scrolling grid floor, bloom glow, and a floating crystal that speeds up and turns red as time runs out.
 - **3D category wheel** that spins for each round, with chasing bulbs, peg ticks and a glowing winning segment.
-- **9 categories, 90 original questions** (`src/data/questions.json`), with no repeats until a category runs out.
+- **18 categories, 391 original questions** (`src/data/questions.json`): General Knowledge, Movies, Disney & Pixar, TV Shows, Music, Pop Stars, Superheroes, Animals, Sports, Food & Drink, Science, Space, History, Geography, Holidays, Brands, Throwback and Tech & Gaming. Each question is tagged kids/teen/adult, and there are no repeats until a category runs out.
 - **Scoring**: 500 for a right answer, up to 500 more for speed, +100 per answer once you're on a 3+ streak, and double points in the final round. All numbers live in `src/game/scoring.ts`.
 - **Juice**: confetti and fireworks on correct answers, screen shake and buzzer on wrong ones, animated score count-ups and a results screen with personal best.
 - **Sound**: every effect and the music are synthesised live with the Web Audio API (`src/audio/sound.ts`), so they're all original and there's nothing to license. The music speeds up and adds drums as the timer runs down, and ducks under sound effects. Recorded samples can be layered in later with `sound.loadSample()`.

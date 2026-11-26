@@ -1,4 +1,4 @@
-import { CATEGORIES, type Category, type CategoryId } from '../game/categories';
+import { CATEGORIES, DEFAULT_CATEGORIES, type Category, type CategoryId } from '../game/categories';
 import { AGE_GROUPS, type AgeGroup, type AnswerResult, type GameConfig, type LiveQuestion } from '../game/session';
 import type { Settings } from '../settings';
 import { sound } from '../audio/sound';
@@ -109,7 +109,9 @@ function segmented(name: string, options: (number | string)[], value: number | s
 }
 
 export function showSetup(settings: Settings, onSettings: () => void): Promise<GameConfig> {
-  const chosen = new Set<CategoryId>(settings.lastCategories ?? CATEGORIES.map((c) => c.id));
+  const known = new Set(CATEGORIES.map((c) => c.id));
+  const saved = settings.lastCategories?.filter((id) => known.has(id));
+  const chosen = new Set<CategoryId>(saved?.length ? saved : DEFAULT_CATEGORIES);
   const vals: { rounds: number; qpr: number; time: number; hints: number; age: AgeGroup } = {
     rounds: settings.rounds,
     qpr: settings.questionsPerRound,
@@ -125,7 +127,7 @@ export function showSetup(settings: Settings, onSettings: () => void): Promise<G
   const el = mount(
     `<header class="bar"><h2>Game setup</h2><button class="icon-btn" aria-label="Settings" data-settings>⚙️</button></header>
      <div class="scroll">
-       <h3>Categories <button class="link" data-all>All</button></h3>
+       <h3>Categories <span class="count" data-count></span><button class="link" data-all>All</button></h3>
        <div class="chips">${CATEGORIES.map(
          (c) =>
            `<button class="chip ${chosen.has(c.id) ? 'on' : ''}" data-cat="${c.id}" style="--c:${c.color}">
@@ -146,6 +148,7 @@ export function showSetup(settings: Settings, onSettings: () => void): Promise<G
   const refresh = () => {
     el.querySelectorAll<HTMLElement>('[data-cat]').forEach((b) => b.classList.toggle('on', chosen.has(b.dataset.cat as CategoryId)));
     startBtn.disabled = chosen.size === 0;
+    el.querySelector('[data-count]')!.textContent = `${chosen.size} of ${CATEGORIES.length}`;
   };
 
   el.querySelector('[data-settings]')!.addEventListener('click', onSettings);
