@@ -103,6 +103,11 @@ export class PartyHost {
         playerId = this.hello(conn, msg);
         return;
       }
+      if (msg.t === 'leave' && playerId) {
+        this.leave(playerId);
+        playerId = null;
+        return;
+      }
       if (playerId) this.handle(playerId, msg);
     });
     conn.on('close', () => {
@@ -168,8 +173,24 @@ export class PartyHost {
 
   removeLocal(): void {
     const p = this.localPlayer;
-    if (!p || this.locked) return;
-    this.players.delete(p.id);
+    if (p && !this.locked) this.removePlayer(p.id);
+  }
+
+  /** A player chose to leave: gone from the lobby before the game; mid-game their team keeps its points. */
+  private leave(playerId: string): void {
+    const p = this.players.get(playerId);
+    if (!p) return;
+    if (!this.locked) this.removePlayer(playerId);
+    else {
+      p.conn = null;
+      this.lobbyChanged();
+    }
+  }
+
+  private removePlayer(playerId: string): void {
+    const p = this.players.get(playerId);
+    if (!p) return;
+    this.players.delete(playerId);
     if (this.mode === 'players') this.teams = this.teams.filter((t) => t.id !== p.teamId);
     this.lobbyChanged();
   }

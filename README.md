@@ -93,6 +93,9 @@ Both are on by default and can be switched off in setup under **Special rounds**
 ## Who Am I?
 
 The **Who Am I?** category (40 famous people: painters, musicians, composers, actors, directors, athletes and writers) shows four clues, one at a time, hardest first. Answer early on fewer clues for more points.
+## Staten Island
+
+The **Staten Island** category (35 questions) covers the ferry, the bridges, neighborhoods, landmarks, history, food, sports and famous Staten Islanders. Facts were checked against public sources. It's off by default, so tick it in setup.
 
 ## Name That Tune
 
@@ -125,6 +128,10 @@ Setup steps are at the top of `scripts/voice/gen.py`. A test fails if any line i
 ## Music
 
 All music is original and synthesised live in the app: a game-show theme on the title and setup screens, a "here we go" fanfare when a game starts, and adaptive music during questions that speeds up as the timer runs down.
+
+## Getting home
+
+Tap 🏠 in the top-left corner (or press Back or Escape) to return to the title screen. During a game you're asked first. If you're hosting, this closes the room and every phone is told the game ended. On a phone it leaves the room, and before the game starts your name is removed from the lobby.
 
 ## Game options
 

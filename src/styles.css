@@ -2586,3 +2586,75 @@ button:focus-visible {
     font-size: 12px;
   }
 }
+
+/* ---------- home button ---------- */
+.home-btn {
+  position: fixed;
+  z-index: 40;
+  top: calc(12px + var(--safe-top));
+  left: calc(12px + var(--safe-left, 0px));
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  font-size: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--glass-border);
+  background: rgba(10, 8, 34, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.home-btn[hidden] {
+  display: none;
+}
+.home-btn:hover,
+.home-btn:focus-visible {
+  transform: scale(1.08);
+  box-shadow: 0 0 16px rgba(56, 225, 255, 0.6);
+  outline: none;
+}
+.home-btn:active {
+  transform: scale(0.94);
+}
+/* Leave room for the button on screens with something in the top-left corner. */
+body:has(.home-btn:not([hidden])) .screen > .hud,
+body:has(.home-btn:not([hidden])) .screen > header.bar,
+body:has(.home-btn:not([hidden])) .screen > .bar {
+  padding-left: 50px;
+}
+.home-confirm .sheet {
+  text-align: center;
+  max-width: 420px;
+}
+.home-confirm .home-ico {
+  font-size: 44px;
+  line-height: 1;
+}
+.home-confirm h2 {
+  margin: 8px 0 4px;
+}
+.home-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+body.going-home #ui,
+body.going-home #stage {
+  transition: opacity 0.4s ease;
+  opacity: 0;
+}
+@media (min-width: 1400px) {
+  .home-btn {
+    width: 56px;
+    height: 56px;
+    font-size: 26px;
+  }
+  body:has(.home-btn:not([hidden])) .screen > .hud {
+    padding-left: 66px;
+  }
+}

@@ -17,6 +17,7 @@ import * as ui from './ui/ui';
 import { isMatch } from './game/match';
 import { DEFAULT_AVATAR } from './game/avatars';
 import { isTyped, parseGuess } from './game/session';
+import { initHome, setHome } from './ui/home';
 
 const settings = loadSettings();
 const stage = new Stage(document.getElementById('stage') as HTMLCanvasElement, settings.quality);
@@ -37,6 +38,7 @@ const openSettings = () => ui.openSettings(settings, applySettings);
 
 async function playGame(config: GameConfig): Promise<'again' | 'setup'> {
   const session = new GameSession(config, BANK);
+  setHome({ mode: 'confirm', title: 'Quit this game?', detail: 'Your score so far will be lost.' });
   stage.wheel.build(config.categories.map(getCategory));
   sound.introStinger();
   voice.line('intro');
@@ -118,6 +120,7 @@ async function playGame(config: GameConfig): Promise<'again' | 'setup'> {
   sound.fanfare();
   haptics.success();
   setTimeout(() => voice.line('soloEnd', { score: session.score.toLocaleString() }), 1800);
+  setHome({ mode: 'free' });
   return ui.showResults(
     {
       score: session.score,
@@ -196,6 +199,7 @@ async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<voi
   party.showMessageNoButton('Opening a room…');
   try {
     await host.open(opts.teamMode, opts.teamCount);
+    setHome({ mode: 'confirm', title: 'Close the room?', detail: 'The game ends for everyone and the phones go back to the start.', cleanup: () => host.close() });
   } catch (e) {
     await party.showMessage("Couldn't open a room", e instanceof Error ? e.message : String(e));
     return;
@@ -438,6 +442,7 @@ async function joinParty(presetCode = ''): Promise<void> {
   sound.setMusic('off');
   let code = presetCode;
   for (;;) {
+    setHome({ mode: 'free' });
     const form = await joinForm(settings, code);
     if (!form) {
       stage.setPaused(false);
@@ -453,6 +458,7 @@ async function joinParty(presetCode = ''): Promise<void> {
       await ui.wait(2500);
       continue;
     }
+    setHome({ mode: 'confirm', title: 'Leave this game?', detail: 'You can join again with the room code.', cleanup: () => client.leave() });
     new Controller(client);
     return new Promise(() => undefined); // the controller runs until the page closes
   }
@@ -461,6 +467,7 @@ async function joinParty(presetCode = ''): Promise<void> {
 // ---------------- Start ----------------
 
 async function main(): Promise<void> {
+  initHome();
   const joinCode = new URLSearchParams(window.location.search).get('join');
   if (joinCode) {
     // Opened from the TV's QR code: go straight to joining, no 3D stage needed.
@@ -479,6 +486,7 @@ async function main(): Promise<void> {
     stage.setMode('idle');
     stage.setAccent('#38e1ff');
     sound.setMusic('intro');
+    setHome({ mode: 'hidden' });
     const choice = await ui.showTitle(openSettings);
     sound.unlock();
     applySettings(settings);
@@ -489,6 +497,7 @@ async function main(): Promise<void> {
       await joinParty();
       continue;
     }
+    setHome({ mode: 'free' });
     const config = await ui.showSetup(settings, openSettings, choice === 'host');
     saveSettings(settings);
     if (choice === 'host') {
@@ -502,6 +511,7 @@ async function main(): Promise<void> {
         stage.setMode('idle');
         stage.setAccent('#38e1ff');
         sound.setMusic('intro');
+        setHome({ mode: 'free' });
         solo = await ui.showSetup(settings, openSettings);
         saveSettings(settings);
       }

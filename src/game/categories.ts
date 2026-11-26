@@ -23,7 +23,8 @@ export type CategoryId =
   | 'truth'
   | 'teasers'
   | 'estimate'
-  | 'whoami';
+  | 'whoami'
+  | 'statenisland';
 
 export interface Category {
   id: CategoryId;
@@ -41,6 +42,7 @@ export const CATEGORIES: readonly Category[] = [
   { id: 'teasers', name: 'Brain Teasers', icon: '🧩', color: '#ff9a4d' },
   { id: 'estimate', name: 'Closest Guess', icon: '🎯', color: '#ff5a6e' },
   { id: 'whoami', name: 'Who Am I?', icon: '🕵️', color: '#b48cff' },
+  { id: 'statenisland', name: 'Staten Island', icon: '⛴️', color: '#ff8a1f' },
   { id: 'screen', name: 'Movies', icon: '🎬', color: '#ff4fa3' },
   { id: 'disney', name: 'Disney & Pixar', icon: '🏰', color: '#5ab4ff' },
   { id: 'tv', name: 'TV Shows', icon: '📺', color: '#ff7ad9' },
