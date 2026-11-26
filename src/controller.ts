@@ -9,6 +9,7 @@ import { haptics } from './audio/haptics';
 import { esc, mount, press, wagerButtons } from './ui/ui';
 import type { Settings } from './settings';
 import { saveSettings } from './settings';
+import { setHome } from './ui/home';
 import { AVATARS, avatarSvg, randomAvatar } from './game/avatars';
 import { avatarHtml, react, wrongReaction } from './ui/avatarFx';
 
@@ -139,7 +140,8 @@ export class Controller {
         this.final(m.teams);
         break;
       case 'bye':
-        this.waitScreen('Game over', m.reason);
+        this.waitScreen('Game over', `${m.reason} Tap 🏠 to go back to the start.`);
+        setHome({ mode: 'free' });
         break;
     }
   }
