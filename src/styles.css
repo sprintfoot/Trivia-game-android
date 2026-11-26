@@ -1930,3 +1930,79 @@ button:focus-visible {
     font-size: 7vw;
   }
 }
+
+/* Upright phones: keep the timer, question, picture and all four answers on screen. */
+@media (orientation: portrait) {
+  .question .q-area {
+    gap: clamp(6px, 1.4vh, 14px);
+    min-height: 0;
+  }
+  .timer {
+    width: clamp(54px, 9vh, 84px);
+    height: clamp(54px, 9vh, 84px);
+  }
+  .timer .secs {
+    font-size: clamp(22px, 3.6vh, 32px);
+  }
+  .q-card.has-pic {
+    padding: 12px 16px 14px;
+  }
+  .q-card.has-pic .q-cat {
+    margin-bottom: 4px;
+  }
+  .q-card.has-pic .q-text {
+    font-size: clamp(17px, 2.6vh, 24px);
+  }
+  .pic {
+    margin-top: 8px;
+  }
+  .pic-flag {
+    max-height: 20vh;
+  }
+  .pic-zoom {
+    width: min(100%, 20vh);
+  }
+  .pic-emoji {
+    min-height: 0;
+    padding: 6px;
+    font-size: min(12vw, 8vh);
+  }
+  .pic-tune {
+    padding: 6px;
+    gap: 12px;
+  }
+  .pic-tune .vinyl {
+    width: min(14vh, 110px);
+  }
+  .pic-tune .eq {
+    height: 7vh;
+  }
+  .question .hint-btn {
+    align-self: center;
+    padding: 6px 14px;
+    font-size: 14px;
+  }
+  .ans {
+    min-height: clamp(46px, 7vh, 58px);
+    padding: 8px 12px;
+  }
+}
+@media (orientation: portrait) and (max-height: 760px) {
+  .ans {
+    font-size: 15px;
+    gap: 10px;
+  }
+  .ans .letter {
+    width: 30px;
+    height: 30px;
+  }
+  .answers {
+    gap: 8px;
+  }
+  .hud > div {
+    padding: 5px 10px;
+  }
+  .hud-score .val {
+    font-size: 18px;
+  }
+}
