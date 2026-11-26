@@ -16,10 +16,26 @@ export const LINES = {
     'Round {n}! Fingers on buzzers. Metaphorically.',
     'Here comes round {n}. Snacks down, brains up.',
   ],
+  mixed: [
+    "We're mixing it up! Every question could be anything. Keep your brain on its toes.",
+    'A bit of everything, coming right up. No wheel, no warning, no mercy.',
+  ],
+  mixedRound: [
+    'Round {n}! Another mixed bag. Anything goes.',
+    'Round {n}. Shuffle those brain cells, it is a bit of everything again.',
+  ],
   finalRound: [
     'Final round! Double points! This is where legends are made, and friendships are tested.',
     'Last round, double points. Anyone can still win. Statistically. Ish.',
     "Final round! If you've been saving your best answers, now would be a great time.",
+  ],
+  lightning: [
+    'Lightning round! Five quick questions, eight seconds each. No thinking allowed. Well, a little.',
+    'Lightning round! Fast fingers, faster brains. Go go go!',
+  ],
+  wager: [
+    'Final wager! How sure are you? Bet big, win big. Or lose big. Mostly that.',
+    'It all comes down to this. Place your bets!',
   ],
   category: [
     '{category}! Oh, I love this one.',

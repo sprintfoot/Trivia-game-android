@@ -6,7 +6,7 @@ import { PartyClient } from './net/client';
 import type { HostMsg, PublicTeam } from './net/protocol';
 import { sound } from './audio/sound';
 import { haptics } from './audio/haptics';
-import { esc, mount, press } from './ui/ui';
+import { esc, mount, press, wagerButtons } from './ui/ui';
 import type { Settings } from './settings';
 import { saveSettings } from './settings';
 import { AVATARS, avatarSvg, randomAvatar } from './game/avatars';
@@ -121,6 +121,16 @@ export class Controller {
       case 'hint':
         if (m.qid === this.qid) this.applyHint(m.hidden, m.hintsLeft);
         break;
+      case 'wager':
+        this.inGame = true;
+        this.wager(m);
+        break;
+      case 'bet': {
+        const note = document.querySelector('[data-bet-note]');
+        if (note) note.textContent = `${m.by === this.myName ? 'You' : m.by} bet ${m.amount.toLocaleString()} for the team.`;
+        document.querySelectorAll<HTMLElement>('.wager-btn').forEach((b) => b.classList.toggle('on', Number(b.dataset.wager) === m.amount));
+        break;
+      }
       case 'reveal':
         this.teams = m.teams;
         this.reveal(m);
@@ -132,6 +142,28 @@ export class Controller {
         this.waitScreen('Game over', m.reason);
         break;
     }
+  }
+
+  private get myName(): string {
+    return this.teams.flatMap((t) => t.members).find((x) => x.id === this.playerId)?.name ?? '';
+  }
+
+  private wager(m: Extract<HostMsg, { t: 'wager' }>): void {
+    this.qid = -1;
+    const el = mount(
+      `<div class="ctl ctl-wager" style="--c:${m.category.color}">
+         <div class="ctl-big">🎲 Place your bet</div>
+         <p class="ctl-sub">${esc(m.category.icon)} ${esc(m.category.name)} · Your team has ${m.score.toLocaleString()} points</p>
+         <p class="ctl-sub">Right: win your bet. Wrong: lose it.</p>
+         <div class="wager-btns">${wagerButtons(m.max)}</div>
+         <p class="ctl-sub" data-bet-note>Anyone on your team can bet. The last bet counts.</p>
+       </div>`,
+      'ctl-screen',
+    );
+    haptics.tap();
+    el.querySelectorAll<HTMLElement>('[data-wager]').forEach((b) =>
+      press(b, () => this.client.send({ t: 'bet', amount: Number(b.dataset.wager) })),
+    );
   }
 
   private lobby(mode: 'teams' | 'players'): void {
@@ -184,7 +216,7 @@ export class Controller {
          ${
            m.typed
              ? `<form class="ctl-type" autocomplete="off">
-                  <input name="guess" maxlength="40" placeholder="Type your answer" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="send" />
+                  <input name="guess" maxlength="40" placeholder="${m.numeric ? 'Type a number' : 'Type your answer'}" ${m.numeric ? 'inputmode="decimal"' : ''} autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="send" />
                   <button class="btn primary" type="submit">SEND</button>
                 </form>
                 <div class="ctl-guesses" data-guesses></div>`
@@ -198,9 +230,13 @@ export class Controller {
          ${m.hintsLeft > 0 ? `<button class="hint-btn" data-hint>💡 50/50 <span>${m.hintsLeft} left</span></button>` : ''}
          <p class="ctl-sub" data-note>${
            m.typed
-             ? m.teamSize > 1
-               ? 'Everyone types a guess. If most of your team gets it right, your team scores.'
-               : 'Type your answer and send it. Small typos are OK.'
+             ? m.numeric
+               ? m.teamSize > 1
+                 ? 'Everyone guesses a number. Your team uses the middle guess. Closest team wins!'
+                 : 'Guess the number. Closest guess wins!'
+               : m.teamSize > 1
+                 ? 'Everyone types a guess. If most of your team gets it right, your team scores.'
+                 : 'Type your answer and send it. Small typos are OK.'
              : m.teamSize > 1
                ? 'Vote with your team. The most popular answer counts.'
                : 'Tap your answer.'
@@ -302,7 +338,7 @@ export class Controller {
       `<div class="ctl ctl-reveal ${m.correct ? 'good' : 'bad'}">
          ${me ? `<div class="ctl-avatar">${avatarHtml(me.avatar)}</div>` : ''}
          <div class="ctl-big">${m.correct ? 'CORRECT!' : m.chosen === null ? "TIME'S UP" : 'WRONG'}</div>
-         ${m.correct ? `<div class="v-points">+${m.points.toLocaleString()}</div>` : `<p class="ctl-sub">It was <b>${esc(m.answerText)}</b></p>`}
+         ${m.correct ? `<div class="v-points">+${m.points.toLocaleString()}</div>` : `<p class="ctl-sub">It was <b>${esc(m.answerText)}</b>${m.points < 0 ? ` · You lost ${Math.abs(m.points).toLocaleString()}` : ''}</p>`}
          <div class="ctl-badge" style="--c:${team?.color ?? '#fff'}">${esc(team?.name ?? '')} · ${(team?.score ?? 0).toLocaleString()} · ${ordinal(m.rank)} place</div>
        </div>`,
       'ctl-screen',

@@ -41,6 +41,35 @@ export interface BankQuestion {
   picture?: Picture;
   /** Fill-in-the-blank: players type the answer; any of these (forgivingly matched) is right. */
   accept?: string[];
+  /** Closest guess: players type a number; within 10% (or the closest team) scores. */
+  estimate?: { value: number; unit?: string };
+  /** Keep the choices in the order written (e.g. Real / Made up). */
+  fixedOrder?: boolean;
+}
+
+export type RoundKind = 'normal' | 'lightning' | 'wager';
+
+export const LIGHTNING = { questions: 5, timeMs: 8000 } as const;
+
+/** Players type rather than pick, for these questions. */
+export function isTyped(q: Pick<BankQuestion, 'accept' | 'estimate'>): boolean {
+  return !!q.accept || !!q.estimate;
+}
+
+/** Reads a typed number: "1,200", "1200", "1.2k", "about 300". */
+export function parseGuess(text: string): number | null {
+  const m = /-?\d[\d,]*(\.\d+)?\s*(k|thousand|m|million|b|billion)?\b/i.exec(text.replace(/\s+/g, ' '));
+  if (!m) return null;
+  let n = Number(m[0].replace(/[^\d.-]/g, ''));
+  const unit = (m[2] ?? '').toLowerCase();
+  if (unit === 'k' || unit === 'thousand') n *= 1e3;
+  if (unit === 'm' || unit === 'million') n *= 1e6;
+  if (unit === 'b' || unit === 'billion') n *= 1e9;
+  return Number.isFinite(n) ? n : null;
+}
+
+export function estimateTolerance(value: number): number {
+  return Math.max(Math.abs(value) * 0.1, 1);
 }
 
 /** A question as shown to a player: choices shuffled, answer index remapped. */
@@ -57,6 +86,12 @@ export interface GameConfig {
   ageGroup?: AgeGroup;
   /** 50/50 hints each team gets for the whole game. */
   hints?: number;
+  /** Add a quick-fire lightning round before the final round. */
+  lightning?: boolean;
+  /** End with one question where teams bet their points. */
+  finalWager?: boolean;
+  /** Mix the chosen categories question by question instead of one category per round. */
+  mixCategories?: boolean;
 }
 
 export interface TeamInfo {
@@ -78,6 +113,8 @@ export interface TeamPick {
   teamId: string;
   chosen: number | null;
   timeLeftMs: number;
+  /** Closest-guess questions: the team's number. */
+  guess?: number | null;
 }
 
 export interface AnswerResult {
@@ -87,6 +124,9 @@ export interface AnswerResult {
   correct: boolean;
   score: ScoreBreakdown;
   streak: number;
+  guess?: number | null;
+  /** Final wager: the amount bet. */
+  wager?: number;
 }
 
 export type Rng = () => number;
@@ -128,7 +168,11 @@ export class GameSession {
   private current: LiveQuestion | null = null;
   private hidden = new Map<string, number[]>();
   private readonly pools = new Map<CategoryId, BankQuestion[]>();
+  private readonly kinds: RoundKind[];
+  private readonly wagers = new Map<string, number>();
   private readonly byCategory = new Map<CategoryId, BankQuestion[]>();
+  private mixDeck: CategoryId[] = [];
+  private lastMixed: CategoryId | null = null;
 
   constructor(
     config: GameConfig,
@@ -149,6 +193,9 @@ export class GameSession {
       this.byCategory.set(id, questions);
       this.pools.set(id, shuffle(questions, rng));
     }
+    this.kinds = Array<RoundKind>(config.rounds).fill('normal');
+    if (config.lightning) this.kinds.splice(Math.max(0, config.rounds - 1), 0, 'lightning');
+    if (config.finalWager) this.kinds.push('wager');
     this.roundCategories = this.planRounds();
   }
 
@@ -176,15 +223,40 @@ export class GameSession {
   // ----- rounds and questions -----
 
   get totalRounds(): number {
-    return this.config.rounds;
+    return this.kinds.length;
+  }
+
+  /** What kind of round is being played (or about to be, before startRound). */
+  get roundKind(): RoundKind {
+    return this.kinds[Math.max(0, this.round - 1)];
+  }
+
+  /** The kind of the next round, for showing the right banner before it starts. */
+  get nextRoundKind(): RoundKind | null {
+    return this.kinds[this.round] ?? null;
+  }
+
+  /** Seconds on the clock for the current round's questions. */
+  get timeLimitMs(): number {
+    return this.roundKind === 'lightning' ? LIGHTNING.timeMs : this.config.timeLimitMs;
+  }
+
+  private questionsIn(kind: RoundKind): number {
+    return kind === 'lightning' ? LIGHTNING.questions : kind === 'wager' ? 1 : this.config.questionsPerRound;
+  }
+
+  /** True when normal rounds serve questions from all the chosen categories, mixed together. */
+  get mixed(): boolean {
+    return !!this.config.mixCategories && this.config.categories.length > 1;
   }
 
   get currentRound(): number {
     return this.round;
   }
 
+  /** The last normal round, worth double. */
   get isFinalRound(): boolean {
-    return this.round === this.config.rounds;
+    return this.round > 0 && this.roundKind === 'normal' && this.kinds.lastIndexOf('normal') === this.round - 1;
   }
 
   get multiplier(): number {
@@ -192,7 +264,7 @@ export class GameSession {
   }
 
   get totalQuestions(): number {
-    return this.config.rounds * this.config.questionsPerRound;
+    return this.kinds.reduce((n, k) => n + this.questionsIn(k), 0);
   }
 
   get currentQuestion(): LiveQuestion | null {
@@ -200,29 +272,54 @@ export class GameSession {
   }
 
   hasNextRound(): boolean {
-    return this.round < this.config.rounds;
+    return this.round < this.kinds.length;
   }
 
   startRound(): CategoryId {
     if (!this.hasNextRound()) throw new Error('No rounds left');
     this.round += 1;
     this.questionInRound = 0;
+    this.wagers.clear();
     return this.roundCategories[this.round - 1];
   }
 
   hasNextQuestion(): boolean {
-    return this.round > 0 && this.questionInRound < this.config.questionsPerRound;
+    return this.round > 0 && this.questionInRound < this.questionsIn(this.roundKind);
+  }
+
+  // ----- final wager -----
+
+  /** The most a team may bet: its score, or 500 if it has less, so nobody is shut out. */
+  maxWager(teamId = this.solo.id): number {
+    return Math.max(this.team(teamId).score, 500);
+  }
+
+  setWager(teamId: string, amount: number): number {
+    const bet = Math.round(Math.min(this.maxWager(teamId), Math.max(0, amount)));
+    this.wagers.set(teamId, bet);
+    return bet;
+  }
+
+  wagerOf(teamId: string): number {
+    return this.wagers.get(teamId) ?? 0;
   }
 
   nextQuestion(): LiveQuestion {
     if (!this.hasNextQuestion()) throw new Error('No questions left in this round');
+    const kind = this.roundKind;
     const category = this.roundCategories[this.round - 1];
-    const q = this.draw(category);
+    // Lightning: quick four-choice questions from any chosen category. Wager: no number guesses.
+    const q =
+      kind === 'lightning'
+        ? this.drawFrom(shuffle(this.config.categories, this.rng), (x) => x.choices.length === 4 && !x.picture && !isTyped(x))
+        : kind === 'wager'
+          ? this.drawFrom([category, ...this.config.categories], (x) => !x.estimate && x.picture?.kind !== 'tune')
+          : this.draw(this.mixed ? this.nextMixedCategory() : category);
     this.questionInRound += 1;
     this.questionCount += 1;
     this.hidden = new Map();
 
-    const order = shuffle(q.choices.map((_, i) => i), this.rng);
+    const order = q.fixedOrder ? q.choices.map((_, i) => i) : shuffle(q.choices.map((_, i) => i), this.rng);
     this.current = {
       ...q,
       choices: order.map((i) => q.choices[i]),
@@ -246,7 +343,8 @@ export class GameSession {
   }
 
   canUseHint(teamId = this.solo.id): boolean {
-    return this.team(teamId).hintsLeft > 0 && this.current !== null && !this.current.accept && !this.hidden.has(teamId);
+    const q = this.current;
+    return this.team(teamId).hintsLeft > 0 && q !== null && !isTyped(q) && q.choices.length >= 4 && this.roundKind !== 'wager' && !this.hidden.has(teamId);
   }
 
   /** 50/50: hides two wrong answers on the current question for one team. Returns the hidden indices. */
@@ -263,8 +361,8 @@ export class GameSession {
   // ----- answers -----
 
   /** Solo: chosen is null when time ran out. */
-  submit(chosen: number | null, timeLeftMs: number): AnswerResult {
-    return this.submitAll([{ teamId: this.solo.id, chosen, timeLeftMs }])[0];
+  submit(chosen: number | null, timeLeftMs: number, guess?: number | null): AnswerResult {
+    return this.submitAll([{ teamId: this.solo.id, chosen, timeLeftMs, guess }])[0];
   }
 
   /** Scores every team on the current question. Teams with no pick count as out of time. */
@@ -272,26 +370,42 @@ export class GameSession {
     const question = this.current;
     if (!question) throw new Error('No active question');
     this.current = null;
+    const wagerRound = this.roundKind === 'wager';
+
+    // Closest guess: within 10% scores, and so does the closest team (when there's more than one).
+    const est = question.estimate;
+    const diffs = new Map<string, number>();
+    if (est) for (const p of picks) if (p.guess != null) diffs.set(p.teamId, Math.abs(p.guess - est.value));
+    const closest = Math.min(...diffs.values());
 
     return this.teams.map((team) => {
       const pick = picks.find((p) => p.teamId === team.id);
-      const chosen = pick?.chosen ?? null;
-      const correct = chosen === question.answer;
-      const score = scoreAnswer({
+      const guess = est ? (pick?.guess ?? null) : undefined;
+      const chosen = est ? (guess == null ? null : 0) : (pick?.chosen ?? null);
+      const diff = diffs.get(team.id);
+      const correct = est
+        ? diff !== undefined && (diff <= estimateTolerance(est.value) || (this.teams.length > 1 && diff === closest))
+        : chosen === question.answer;
+      let score = scoreAnswer({
         correct,
         timeLeftMs: chosen === null ? 0 : (pick?.timeLeftMs ?? 0),
-        timeLimitMs: this.config.timeLimitMs,
+        timeLimitMs: this.timeLimitMs,
         streakBefore: team.streak,
         multiplier: this.multiplier,
         hinted: this.hidden.has(team.id),
       });
+      const wager = wagerRound ? this.wagerOf(team.id) : undefined;
+      if (wager !== undefined) {
+        const delta = correct ? wager : 0 - Math.min(wager, team.score);
+        score = { base: wager, speed: 0, streak: 0, multiplier: 1, hinted: false, total: delta };
+      }
 
       team.streak = correct ? team.streak + 1 : 0;
       team.bestStreak = Math.max(team.bestStreak, team.streak);
       if (correct) team.correctCount += 1;
       team.score += score.total;
 
-      const result: AnswerResult = { teamId: team.id, question, chosen, correct, score, streak: team.streak };
+      const result: AnswerResult = { teamId: team.id, question, chosen, correct, score, streak: team.streak, guess, wager };
       this.history.push(result);
       return result;
     });
@@ -306,7 +420,7 @@ export class GameSession {
   private planRounds(): CategoryId[] {
     const plan: CategoryId[] = [];
     let deck: CategoryId[] = [];
-    while (plan.length < this.config.rounds) {
+    while (plan.length < this.kinds.length) {
       if (deck.length === 0) {
         deck = shuffle(this.config.categories, this.rng);
         if (deck.length > 1 && deck[0] === plan[plan.length - 1]) deck.push(deck.shift()!);
@@ -314,6 +428,28 @@ export class GameSession {
       plan.push(deck.shift()!);
     }
     return plan;
+  }
+
+  /** Deals categories like cards: each chosen one comes up once per pass, never twice in a row. */
+  private nextMixedCategory(): CategoryId {
+    if (this.mixDeck.length === 0) {
+      this.mixDeck = shuffle(this.config.categories, this.rng);
+      if (this.mixDeck.length > 1 && this.mixDeck[0] === this.lastMixed) this.mixDeck.push(this.mixDeck.shift()!);
+    }
+    this.lastMixed = this.mixDeck.shift()!;
+    return this.lastMixed;
+  }
+
+  /** Takes the first question matching `ok` from the first of these categories that has one. */
+  private drawFrom(categories: readonly CategoryId[], ok: (q: BankQuestion) => boolean): BankQuestion {
+    for (const c of categories) {
+      const pool = this.pools.get(c);
+      const i = pool?.findIndex(ok) ?? -1;
+      if (pool && i >= 0) return pool.splice(i, 1)[0];
+      const fresh = this.byCategory.get(c)?.filter(ok) ?? [];
+      if (fresh.length) return fresh[Math.floor(this.rng() * fresh.length)];
+    }
+    return this.draw(categories[0]);
   }
 
   private draw(category: CategoryId): BankQuestion {

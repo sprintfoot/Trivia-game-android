@@ -4,10 +4,11 @@ import type { AnswerResult, LiveQuestion, TeamScore } from '../game/session';
 import type { PartyHost } from '../net/host';
 import { joinUrl } from '../net/protocol';
 import { sound } from '../audio/sound';
-import { countUp, esc, mount, press, revealTyped, typeAnswerHtml, wait } from './ui';
+import { countUp, esc, mount, press, revealTyped, typeAnswerHtml, wagerButtons, wait } from './ui';
 import { pictureHtml, startReveal } from './picture';
 import { avatarHtml, crowdHtml, markVoted, reactCrowd } from './avatarFx';
 import type { PublicTeam } from '../net/protocol';
+import { isTyped } from '../game/session';
 
 // ---------------- Lobby ----------------
 
@@ -110,6 +111,7 @@ export interface TvQuestionHooks {
     hintsLeft: number;
     onPick: (choice: number) => void;
     onGuess: (text: string) => void;
+    numeric?: boolean;
     onHint: () => number[] | null;
   };
 }
@@ -148,10 +150,10 @@ export function tvQuestion(
          <span class="secs" data-secs>${Math.ceil(timeLimitMs / 1000)}</span></div>
        <div class="q-card ${q.picture ? 'has-pic' : ''}"><div class="q-cat">${cat.icon} ${esc(cat.name)}</div><div class="q-text">${esc(q.prompt)}</div>${q.picture ? pictureHtml(q.picture) : ''}</div>
        ${
-         q.accept
+         isTyped(q)
            ? local
-             ? typeAnswerHtml(`${local.name}, type here`)
-             : typeAnswerHtml().replace(/<form[\s\S]*<\/form>/, '<p class="tv-type-note">✏️ Type your answer on your phone!</p>')
+             ? typeAnswerHtml(`${local.name}, type here`, !!q.estimate)
+             : typeAnswerHtml('', !!q.estimate).replace(/<form[\s\S]*<\/form>/, `<p class="tv-type-note">${q.estimate ? '🎯 Type a number on your phone!' : '✏️ Type your answer on your phone!'}</p>`)
            : `<div class="answers">${q.choices
                .map(
                  (c, i) =>
@@ -217,7 +219,7 @@ export function tvQuestion(
     };
     hintBtn?.addEventListener('click', hint);
     onKey = (e: KeyboardEvent) => {
-      if (q.accept) return;
+      if (isTyped(q)) return;
       const k = e.key.toLowerCase();
       const idx = '1234'.indexOf(k) >= 0 ? '1234'.indexOf(k) : 'abcd'.indexOf(k);
       if (idx >= 0 && idx < q.choices.length) pick(idx);
@@ -310,7 +312,15 @@ export async function tvReveal(results: AnswerResult[], teams: readonly TeamScor
     <div class="v-parts">${results
       .map((r) => {
         const t = teams.find((x) => x.id === r.teamId)!;
-        return `<span style="border-color:${t.color}">${esc(t.name)} ${r.correct ? `+${r.score.total.toLocaleString()}` : r.chosen === null ? '⏱' : '✗'}</span>`;
+        const mark =
+          r.wager !== undefined
+            ? `${r.score.total >= 0 ? '+' : '−'}${Math.abs(r.score.total).toLocaleString()}`
+            : r.correct
+              ? `+${r.score.total.toLocaleString()}`
+              : r.chosen === null
+                ? '⏱'
+                : '✗';
+        return `<span style="border-color:${t.color}">${esc(t.name)} ${mark}</span>`;
       })
       .join('')}</div>`;
   el.appendChild(pop);
@@ -385,4 +395,58 @@ export function showMessage(title: string, text: string): Promise<void> {
 
 export function showMessageNoButton(text: string): void {
   mount(`<div class="results"><div class="r-title">${esc(text)}</div></div>`, 'results-screen');
+}
+
+// ---------------- Final wager ----------------
+
+/** The TV while teams place their bets. Resolves when every team has bet or time runs out. */
+export function tvWager(
+  cat: Category,
+  teams: readonly TeamScore[],
+  durationMs: number,
+  allBet: () => boolean,
+  local?: { name: string; max: number; onBet: (amount: number) => void },
+): { done: Promise<void>; setBet: (teamId: string, amount: number) => void } {
+  const el = mount(
+    `<div class="wager-screen" style="--c:${cat.color}">
+       <div class="round-label">🎲 PLACE YOUR BETS</div>
+       <p class="round-sub">${cat.icon} ${esc(cat.name)}</p>
+       <p class="hint">Bet on your phone. Right: win your bet. Wrong: lose it.</p>
+       <div class="wager-teams">${teams
+         .map((t) => `<div class="wager-team" data-team="${t.id}" style="--c:${t.color}"><b>${esc(t.name)}</b><span>${t.score.toLocaleString()} pts</span><i data-bet>Thinking…</i></div>`)
+         .join('')}</div>
+       ${local ? `<p class="hint">${esc(local.name)}, your bet:</p><div class="wager-btns">${wagerButtons(local.max)}</div>` : ''}
+       <div class="wager-timer" data-secs></div>
+     </div>`,
+    'wheel-screen wager',
+  );
+  el.querySelectorAll<HTMLElement>('[data-wager]').forEach((b) =>
+    press(b, () => {
+      el.querySelectorAll('.wager-btn').forEach((x) => x.classList.toggle('on', x === b));
+      local?.onBet(Number(b.dataset.wager));
+    }),
+  );
+  const setBet = (teamId: string, amount: number) => {
+    const row = el.querySelector(`.wager-team[data-team="${teamId}"]`);
+    if (!row) return;
+    if (!row.classList.contains('locked')) sound.lockIn();
+    row.classList.add('locked');
+    row.querySelector('[data-bet]')!.textContent = '✓ Bet placed';
+    void amount; // Bets stay secret until the reveal.
+  };
+  const secs = el.querySelector<HTMLElement>('[data-secs]')!;
+  const done = new Promise<void>((resolve) => {
+    const end = performance.now() + durationMs;
+    const loop = () => {
+      const left = end - performance.now();
+      secs.textContent = `${Math.max(0, Math.ceil(left / 1000))}`;
+      if (left <= 0 || allBet()) {
+        resolve();
+        return;
+      }
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  });
+  return { done, setBet };
 }

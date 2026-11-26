@@ -7,6 +7,7 @@ import { BANK } from '../data/bank';
 import { CATEGORIES } from '../game/categories';
 import { TEAM_PRESETS } from '../game/teams';
 import { LINES, type LineKey } from './lines';
+import { isTyped } from '../game/session';
 
 export const ROUND_NUMBERS = [2, 3, 4, 5, 6];
 export const STREAK_MAX = 20;
@@ -28,7 +29,7 @@ export function lineVariants(key: LineKey): string[] {
     if (t.includes('{category}')) CATEGORIES.forEach((c) => out.push(render(t, { category: c.name })));
     else if (t.includes('{team}')) TEAM_PRESETS.forEach((team) => out.push(render(t, { team: team.name })));
     else if (t.includes('{n}')) {
-      const ns = key === 'round' ? ROUND_NUMBERS : Array.from({ length: STREAK_MAX - 2 }, (_, i) => i + 3);
+      const ns = key === 'round' || key === 'mixedRound' ? ROUND_NUMBERS : Array.from({ length: STREAK_MAX - 2 }, (_, i) => i + 3);
       ns.forEach((n) => out.push(render(t, { n })));
     } else out.push(t);
   }
@@ -48,6 +49,6 @@ export function clipId(text: string): string {
 export function allVoiceTexts(): string[] {
   const texts = new Set<string>();
   for (const key of Object.keys(LINES) as LineKey[]) lineVariants(key).forEach((t) => texts.add(t));
-  for (const q of BANK) if (q.picture?.kind !== 'tune') texts.add(questionSpeech(q.prompt, q.accept ? [] : q.choices));
+  for (const q of BANK) if (q.picture?.kind !== 'tune') texts.add(questionSpeech(q.prompt, isTyped(q) ? [] : q.choices));
   return [...texts];
 }
