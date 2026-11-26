@@ -2840,3 +2840,21 @@ body.going-home #stage {
   border-left: 4px solid var(--c);
   font-weight: 700;
 }
+
+/* ---------- holiday packs ---------- */
+.chip.seasonal {
+  position: relative;
+}
+.chip.seasonal em {
+  position: absolute;
+  top: -9px;
+  right: 8px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--gold);
+  color: #12093a;
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}

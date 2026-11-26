@@ -97,6 +97,10 @@ The **Who Am I?** category (40 famous people: painters, musicians, composers, ac
 
 The **Staten Island** category (35 questions) covers the ferry, the bridges, neighborhoods, landmarks, history, food, sports and famous Staten Islanders. Facts were checked against public sources. It's off by default, so tick it in setup.
 
+## Holiday packs
+
+Six packs of about 15 questions each: 🎄 Christmas, 🎃 Halloween, 🦃 Thanksgiving, 💘 Valentine's Day, 🎆 Fourth of July and 🎉 New Year's. They're listed in setup under **Local & holiday packs** with Staten Island, and the pack for the current season is marked "In season" at the front.
+
 ## Name That Tune
 
 The **Name That Tune** category plays a melody and you pick its title. The tune plays a bit at a

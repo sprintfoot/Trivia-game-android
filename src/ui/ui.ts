@@ -1,4 +1,4 @@
-import { CATEGORIES, DEFAULT_CATEGORIES, type Category, type CategoryId } from '../game/categories';
+import { CATEGORIES, DEFAULT_CATEGORIES, PACK_CATEGORIES, seasonalPack, type Category, type CategoryId } from '../game/categories';
 import { AGE_GROUPS, type AgeGroup, type AnswerResult, type GameConfig, type LiveQuestion } from '../game/session';
 import type { Settings } from '../settings';
 import { sound } from '../audio/sound';
@@ -152,17 +152,22 @@ export function showSetup(settings: Settings, onSettings: () => void, party = fa
     return `${g.label}<small>${g.detail}</small>`;
   };
 
+  const season = seasonalPack(new Date());
+  const chip = (c: Category) =>
+    `<button class="chip ${chosen.has(c.id) ? 'on' : ''} ${c.id === season ? 'seasonal' : ''}" data-cat="${c.id}" style="--c:${c.color}">
+       <span class="ico">${c.icon}</span>${esc(c.name)}${c.id === season ? '<em>✨ In season</em>' : ''}</button>`;
   const el = mount(
     `<header class="bar"><h2>Game setup</h2><button class="icon-btn" aria-label="Settings" data-settings>⚙️</button></header>
      <div class="scroll setup-cols">
       <div class="setup-col">
        ${party ? `<h3>Play as</h3>${segmented('teams', TEAM_OPTIONS, vals.teams, (o) => (o === 0 ? 'Solo players' : `${o} teams`))}` : ''}
        <h3>Categories <span class="count" data-count></span><button class="link" data-all>All</button></h3>
-       <div class="chips">${CATEGORIES.map(
-         (c) =>
-           `<button class="chip ${chosen.has(c.id) ? 'on' : ''}" data-cat="${c.id}" style="--c:${c.color}">
-              <span class="ico">${c.icon}</span>${esc(c.name)}</button>`,
-       ).join('')}</div>
+       <div class="chips">${CATEGORIES.filter((c) => !PACK_CATEGORIES.includes(c.id)).map(chip).join('')}</div>
+       <h3>Local &amp; holiday packs</h3>
+       <div class="chips">${CATEGORIES.filter((c) => PACK_CATEGORIES.includes(c.id))
+         .sort((a, b) => Number(b.id === season) - Number(a.id === season))
+         .map(chip)
+         .join('')}</div>
       </div>
       <div class="setup-col">
        <h3>Most players are</h3>${segmented('age', AGE_GROUPS.map((a) => a.id), vals.age, ageLabel)}
