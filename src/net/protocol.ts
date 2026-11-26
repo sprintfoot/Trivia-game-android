@@ -70,7 +70,7 @@ export type HostMsg =
       rank: number;
       teams: PublicTeam[];
     }
-  | { t: 'final'; teams: PublicTeam[]; yourTeamId: string | null }
+  | { t: 'final'; teams: PublicTeam[]; yourTeamId: string | null; awards?: { icon: string; title: string; why: string; teamId: string }[] }
   | { t: 'bye'; reason: string };
 
 export type PlayerMsg =

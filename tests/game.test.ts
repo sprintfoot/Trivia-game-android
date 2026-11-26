@@ -496,3 +496,77 @@ describe('mixed categories', () => {
     expect(new GameSession(config({ categories: ['science'], mixCategories: true }), BANK).mixed).toBe(false);
   });
 });
+
+describe('awards and hall of fame', async () => {
+  const { computeAwards } = await import('../src/game/awards');
+  const { addGame, emptyHall, gameRecord, lifetime, topScores, MAX_GAMES } = await import('../src/game/hall');
+
+  const twoTeams = () =>
+    new GameSession(config({ rounds: 1, questionsPerRound: 6 }), BANK, mulberry32(21), [
+      { id: 'a', name: 'Aces', color: '#f00' },
+      { id: 'b', name: 'Bees', color: '#0f0' },
+    ]);
+
+  it('gives Speed Demon, On Fire and Big Brain to the team that earned them', () => {
+    const s = twoTeams();
+    s.startRound();
+    while (s.hasNextQuestion()) {
+      const q = s.nextQuestion();
+      // Aces: always right and fast. Bees: right but slow, wrong on every other question.
+      s.submitAll([
+        { teamId: 'a', chosen: q.answer, timeLeftMs: 13000 },
+        { teamId: 'b', chosen: q.number % 2 ? q.answer : (q.answer + 1) % q.choices.length, timeLeftMs: 1500 },
+      ]);
+    }
+    const awards = computeAwards(s.history, s.standings());
+    const by = (id: string) => awards.find((a) => a.id === id);
+    expect(by('speed')?.teamId).toBe('a');
+    expect(by('speed')?.why).toBe('2.0s average right answer');
+    expect(by('streak')?.teamId).toBe('a');
+    expect(by('brain')?.teamId).toBe('a');
+    expect(by('clutch')?.teamId).toBe('b');
+    expect(by('roller')).toBeUndefined();
+  });
+
+  it('gives no awards for a game with nothing to celebrate', () => {
+    const s = new GameSession(config({ rounds: 1, questionsPerRound: 3 }), BANK, mulberry32(22));
+    s.startRound();
+    while (s.hasNextQuestion()) {
+      s.nextQuestion();
+      s.submit(null, 0);
+    }
+    expect(computeAwards(s.history, s.standings())).toEqual([]);
+  });
+
+  it('keeps a hall of fame with top scores and lifetime stats', () => {
+    let hall = emptyHall();
+    for (let g = 0; g < 3; g++) {
+      const s = new GameSession(config({ rounds: 1, questionsPerRound: 4 }), BANK, mulberry32(30 + g));
+      s.startRound();
+      while (s.hasNextQuestion()) {
+        const q = s.nextQuestion();
+        s.submit(g === 2 ? null : q.answer, 10000);
+      }
+      const team = { ...s.teams[0], name: 'Craig' };
+      hall = addGame(hall, gameRecord('solo', [team], s.history, computeAwards(s.history, [team]), 1000 + g));
+    }
+    const top = topScores(hall);
+    expect(top).toHaveLength(2); // a zero score isn't a high score
+    expect(top[0].score).toBeGreaterThanOrEqual(top[1].score);
+    const life = lifetime(hall);
+    expect(life.games).toBe(3);
+    expect(life.answered).toBe(12);
+    expect(life.correct).toBe(8);
+    expect(life.bestStreak).toBe(4);
+    expect(life.trophies.find((t) => t.title === 'On Fire')?.count).toBe(2);
+    expect(life.categories.reduce((n, c) => n + c[2], 0)).toBe(12);
+  });
+
+  it('only keeps the newest games', () => {
+    let hall = emptyHall();
+    const rec = { at: 0, mode: 'solo' as const, entries: [], awards: [] };
+    for (let i = 0; i < MAX_GAMES + 5; i++) hall = addGame(hall, { ...rec, at: i });
+    expect(hall.games).toHaveLength(MAX_GAMES);
+    expect(hall.games[0].at).toBe(MAX_GAMES + 4);
+  });
+});

@@ -17,6 +17,9 @@ import * as ui from './ui/ui';
 import { isMatch } from './game/match';
 import { DEFAULT_AVATAR } from './game/avatars';
 import { isTyped, parseGuess } from './game/session';
+import { computeAwards } from './game/awards';
+import { addGame, gameRecord, loadHall, saveHall, topScores, emptyHall } from './game/hall';
+import { awardsHtml, showHall } from './ui/hall';
 
 const settings = loadSettings();
 const stage = new Stage(document.getElementById('stage') as HTMLCanvasElement, settings.quality);
@@ -118,6 +121,12 @@ async function playGame(config: GameConfig): Promise<'again' | 'setup'> {
   sound.fanfare();
   haptics.success();
   setTimeout(() => voice.line('soloEnd', { score: session.score.toLocaleString() }), 1800);
+  const me = { ...session.teams[0], name: settings.playerName?.trim() || 'You' };
+  const awards = computeAwards(session.history, [me]);
+  const rec = gameRecord('solo', [me], session.history, awards);
+  const hall = addGame(loadHall(), rec);
+  saveHall(hall);
+  const rank = topScores(hall, 10).findIndex((e) => e.at === rec.at && e.score === me.score) + 1;
   return ui.showResults(
     {
       score: session.score,
@@ -126,6 +135,8 @@ async function playGame(config: GameConfig): Promise<'again' | 'setup'> {
       bestStreak: session.bestStreak,
       newBest,
       previousBest,
+      awardsHtml: awardsHtml(awards),
+      hallRank: rank || undefined,
     },
     () => sound.points(),
   );
@@ -380,13 +391,16 @@ async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<voi
     stage.bigCelebrate();
     sound.setMusic('results');
     sound.fanfare();
-    host.broadcast({ t: 'final', teams: host.publicTeams(), yourTeamId: null });
+    const standings = session.standings();
+    const awards = computeAwards(session.history, standings);
+    saveHall(addGame(loadHall(), gameRecord('party', standings, session.history, awards)));
+    host.broadcast({ t: 'final', teams: host.publicTeams(), yourTeamId: null, awards });
     const top = session.standings();
     setTimeout(() => {
       if (top.length > 1 && top[0].score === top[1].score) voice.line('tie');
       else voice.line('winner', { team: top[0].name });
     }, 1500);
-    const next = await party.tvFinal(session.standings(), host.mode === 'players');
+    const next = await party.tvFinal(standings, host.mode === 'players', awardsHtml(awards, new Map(standings.map((t) => [t.id, t.name]))));
     if (next === 'setup') {
       host.close();
       return;
@@ -487,6 +501,13 @@ async function main(): Promise<void> {
 
     if (choice === 'join') {
       await joinParty();
+      continue;
+    }
+    if (choice === 'hall') {
+      await showHall(loadHall(), () => {
+        saveHall(emptyHall());
+        return emptyHall();
+      });
       continue;
     }
     const config = await ui.showSetup(settings, openSettings, choice === 'host');

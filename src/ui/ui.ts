@@ -69,7 +69,7 @@ export function countUp(el: HTMLElement, from: number, to: number, ms: number, o
 
 // ---------------- Title ----------------
 
-export type TitleChoice = 'solo' | 'host' | 'join';
+export type TitleChoice = 'solo' | 'host' | 'join' | 'hall';
 
 export function showTitle(onSettings: () => void): Promise<TitleChoice> {
   const el = mount(
@@ -85,6 +85,7 @@ export function showTitle(onSettings: () => void): Promise<TitleChoice> {
            <button class="btn ghost" data-choice="join">JOIN A GAME</button>
            <button class="btn ghost" data-choice="solo">PLAY SOLO</button>
          </div>
+         <button class="btn link hof-btn" data-choice="hall">🏆 Hall of Fame</button>
        </div>
      </div>
      <div class="corner-btns">
@@ -107,7 +108,7 @@ export function showTitle(onSettings: () => void): Promise<TitleChoice> {
       b.addEventListener('click', () => {
         const choice = b.dataset.choice as TitleChoice;
         // Going full screen needs a tap; the TV/host screen is where it matters.
-        if (choice !== 'join' && canFullscreen() && window.matchMedia('(pointer: coarse)').matches) toggleFullscreen();
+        if (choice !== 'join' && choice !== 'hall' && canFullscreen() && window.matchMedia('(pointer: coarse)').matches) toggleFullscreen();
         resolve(choice);
       }),
     );
@@ -585,6 +586,10 @@ export interface ResultsData {
   bestStreak: number;
   newBest: boolean;
   previousBest: number;
+  /** Awards earned this game (already rendered). */
+  awardsHtml?: string;
+  /** Place in the hall of fame's top 10, if it made it. */
+  hallRank?: number;
 }
 
 export function showResults(d: ResultsData, onPoints: () => void): Promise<'again' | 'setup'> {
@@ -599,6 +604,8 @@ export function showResults(d: ResultsData, onPoints: () => void): Promise<'agai
          <div><b>${Math.round(acc * 100)}%</b><span>accuracy</span></div>
          <div><b>${d.bestStreak}</b><span>best streak</span></div>
        </div>
+       ${d.hallRank ? `<div class="r-hof">🏆 #${d.hallRank} in the Hall of Fame!</div>` : ''}
+       ${d.awardsHtml ?? ''}
        ${!d.newBest && d.previousBest ? `<p class="hint">Personal best: ${d.previousBest.toLocaleString()}</p>` : ''}
      </div>
      <footer class="foot two">

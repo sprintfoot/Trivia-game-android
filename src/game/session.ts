@@ -127,6 +127,11 @@ export interface AnswerResult {
   guess?: number | null;
   /** Final wager: the amount bet. */
   wager?: number;
+  /** Which kind of round the question was in. */
+  kind: RoundKind;
+  /** Time left on the clock when the answer went in (0 when time ran out), and the clock's length. */
+  timeLeftMs: number;
+  timeLimitMs: number;
 }
 
 export type Rng = () => number;
@@ -405,7 +410,19 @@ export class GameSession {
       if (correct) team.correctCount += 1;
       team.score += score.total;
 
-      const result: AnswerResult = { teamId: team.id, question, chosen, correct, score, streak: team.streak, guess, wager };
+      const result: AnswerResult = {
+        teamId: team.id,
+        question,
+        chosen,
+        correct,
+        score,
+        streak: team.streak,
+        guess,
+        wager,
+        kind: this.roundKind,
+        timeLeftMs: chosen === null ? 0 : (pick?.timeLeftMs ?? 0),
+        timeLimitMs: this.timeLimitMs,
+      };
       this.history.push(result);
       return result;
     });
