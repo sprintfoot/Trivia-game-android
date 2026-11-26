@@ -7,12 +7,12 @@ import { haptics } from '../audio/haptics';
 const root = document.getElementById('ui')!;
 const flashEl = document.getElementById('flash')!;
 
-const esc = (s: string) =>
+export const esc = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
 export const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
-function mount(html: string, cls = ''): HTMLElement {
+export function mount(html: string, cls = ''): HTMLElement {
   root.innerHTML = `<section class="screen ${cls}">${html}</section>`;
   const el = root.firstElementChild as HTMLElement;
   // TV remotes and keyboards: put focus on the screen's main action.
@@ -27,7 +27,7 @@ export function toggleFullscreen(): void {
   else void document.documentElement.requestFullscreen?.().catch(() => undefined);
 }
 
-function press(el: Element, fn: () => void): void {
+export function press(el: Element, fn: () => void): void {
   el.addEventListener('click', () => {
     sound.click();
     haptics.tap();
@@ -43,7 +43,7 @@ export function flash(color: string): void {
 }
 
 /** Counts a number up inside an element. */
-function countUp(el: HTMLElement, from: number, to: number, ms: number, onStep?: () => void): Promise<void> {
+export function countUp(el: HTMLElement, from: number, to: number, ms: number, onStep?: () => void): Promise<void> {
   return new Promise((resolve) => {
     const start = performance.now();
     let lastStep = 0;
@@ -64,12 +64,20 @@ function countUp(el: HTMLElement, from: number, to: number, ms: number, onStep?:
 
 // ---------------- Title ----------------
 
-export function showTitle(onSettings: () => void): Promise<void> {
+export type TitleChoice = 'solo' | 'host' | 'join';
+
+export function showTitle(onSettings: () => void): Promise<TitleChoice> {
   const el = mount(
     `<div class="title-wrap">
        <div class="logo"><span class="l1">TRIVIA</span><span class="l2">PARTY</span></div>
        <p class="tagline">Spin. Answer. Brag.</p>
-       <button class="btn primary big" data-play data-focus>TAP TO PLAY</button>
+       <div class="title-actions">
+         <button class="btn primary big" data-choice="host" data-focus>HOST A PARTY</button>
+         <div class="title-row">
+           <button class="btn ghost" data-choice="join">JOIN A GAME</button>
+           <button class="btn ghost" data-choice="solo">PLAY SOLO</button>
+         </div>
+       </div>
      </div>
      <div class="corner-btns">
        ${canFullscreen() ? '<button class="icon-btn" aria-label="Full screen" data-fs>⛶</button>' : ''}
@@ -87,11 +95,14 @@ export function showTitle(onSettings: () => void): Promise<void> {
     (e.currentTarget as HTMLElement).remove();
   });
   return new Promise((resolve) => {
-    el.querySelector('[data-play]')!.addEventListener('click', () => {
-      // Going full screen needs a tap, so take the Play tap on phones/TVs in the browser.
-      if (canFullscreen() && window.matchMedia('(pointer: coarse)').matches) toggleFullscreen();
-      resolve();
-    });
+    el.querySelectorAll<HTMLElement>('[data-choice]').forEach((b) =>
+      b.addEventListener('click', () => {
+        const choice = b.dataset.choice as TitleChoice;
+        // Going full screen needs a tap; the TV/host screen is where it matters.
+        if (choice !== 'join' && canFullscreen() && window.matchMedia('(pointer: coarse)').matches) toggleFullscreen();
+        resolve(choice);
+      }),
+    );
   });
 }
 
@@ -108,11 +119,19 @@ function segmented(name: string, options: (number | string)[], value: number | s
     .join('')}</div>`;
 }
 
-export function showSetup(settings: Settings, onSettings: () => void): Promise<GameConfig> {
+export interface PartyOptions {
+  teamMode: 'teams' | 'players';
+  teamCount: number;
+}
+
+const TEAM_OPTIONS = [2, 3, 4, 6, 0];
+
+export function showSetup(settings: Settings, onSettings: () => void, party = false): Promise<GameConfig & { party: PartyOptions }> {
   const known = new Set(CATEGORIES.map((c) => c.id));
   const saved = settings.lastCategories?.filter((id) => known.has(id));
   const chosen = new Set<CategoryId>(saved?.length ? saved : DEFAULT_CATEGORIES);
-  const vals: { rounds: number; qpr: number; time: number; hints: number; age: AgeGroup } = {
+  const vals: { rounds: number; qpr: number; time: number; hints: number; age: AgeGroup; teams: number } = {
+    teams: settings.teamMode === 'players' ? 0 : settings.teamCount,
     rounds: settings.rounds,
     qpr: settings.questionsPerRound,
     time: settings.timeLimitSec,
@@ -127,6 +146,7 @@ export function showSetup(settings: Settings, onSettings: () => void): Promise<G
   const el = mount(
     `<header class="bar"><h2>Game setup</h2><button class="icon-btn" aria-label="Settings" data-settings>⚙️</button></header>
      <div class="scroll">
+       ${party ? `<h3>Play as</h3>${segmented('teams', TEAM_OPTIONS, vals.teams, (o) => (o === 0 ? 'Solo players' : `${o} teams`))}` : ''}
        <h3>Categories <span class="count" data-count></span><button class="link" data-all>All</button></h3>
        <div class="chips">${CATEGORIES.map(
          (c) =>
@@ -140,7 +160,7 @@ export function showSetup(settings: Settings, onSettings: () => void): Promise<G
        <h3>50/50 hints per game</h3>${segmented('hints', HINT_OPTIONS, vals.hints, (o) => (o === 0 ? 'Off' : String(o)))}
        <p class="hint">A hint removes two wrong answers but halves that question's points. The last round is worth double.</p>
      </div>
-     <footer class="foot"><button class="btn primary big" data-start data-focus>START GAME</button></footer>`,
+     <footer class="foot"><button class="btn primary big" data-start data-focus>${party ? 'OPEN THE LOBBY' : 'START GAME'}</button></footer>`,
     'setup',
   );
 
@@ -191,7 +211,12 @@ export function showSetup(settings: Settings, onSettings: () => void): Promise<G
       settings.timeLimitSec = vals.time;
       settings.hints = vals.hints;
       settings.ageGroup = vals.age;
+      if (party) {
+        settings.teamMode = vals.teams === 0 ? 'players' : 'teams';
+        if (vals.teams) settings.teamCount = vals.teams;
+      }
       resolve({
+        party: { teamMode: vals.teams === 0 ? 'players' : 'teams', teamCount: vals.teams || 2 },
         categories,
         rounds: vals.rounds,
         questionsPerRound: vals.qpr,

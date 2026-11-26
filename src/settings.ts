@@ -13,6 +13,9 @@ export interface Settings {
   timeLimitSec: number;
   ageGroup: AgeGroup;
   hints: number;
+  teamMode: 'teams' | 'players';
+  teamCount: number;
+  playerName: string;
   bestScore: number;
 }
 
@@ -29,6 +32,9 @@ const DEFAULTS: Settings = {
   timeLimitSec: 15,
   ageGroup: 'adult',
   hints: 3,
+  teamMode: 'teams',
+  teamCount: 2,
+  playerName: '',
   bestScore: 0,
 };
 

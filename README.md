@@ -2,7 +2,7 @@
 
 An original party trivia game for Android, built with three.js and wrapped as a native app with Capacitor.
 
-This is **phase 1: the one-phone game**. Multiplayer rooms with join codes come in phase 2.
+Play solo on one phone, or host a party on a TV where everyone answers on their own phone (iPhone or Android, no app needed for players).
 
 ## What's in phase 1
 
@@ -14,6 +14,41 @@ This is **phase 1: the one-phone game**. Multiplayer rooms with join codes come 
 - **Sound**: every effect and the music are synthesised live with the Web Audio API (`src/audio/sound.ts`), so they're all original and there's nothing to license. The music speeds up and adds drums as the timer runs down, and ducks under sound effects. Recorded samples can be layered in later with `sound.loadSample()`.
 - **Haptics** on taps, ticks, right and wrong answers (Capacitor Haptics on Android, `navigator.vibrate` on the web).
 - **Settings**: sound, music, vibration, and graphics quality (Auto drops to Low on slow phones).
+
+## How to play a party game
+
+You need one screen everyone can see (the **host**), and everyone's phones.
+
+**1. Set up the host screen.** Use any of these:
+- An Android TV / Google TV with the app installed.
+- An Android phone or tablet with the app, cast or mirrored to your TV.
+- A laptop plugged into the TV, with the game open at **https://sprintfoot.github.io/Trivia-game-android/**.
+
+**2. Open a room.** On the host, tap **HOST A PARTY**. Pick how you want to play:
+- **2, 3, 4 or 6 teams**: friends join a team and answer together.
+- **Solo players**: everyone plays for themselves.
+
+Then pick categories, ages, rounds and timer, and tap **OPEN THE LOBBY**. The TV shows a QR code and a 4-letter room code.
+
+**3. Everyone joins on their phone.** iPhone or Android, no app needed:
+- Point the phone camera at the QR code and tap the link, **or**
+- Go to **sprintfoot.github.io/Trivia-game-android**, tap **JOIN A GAME** and type the code.
+
+Type your name. In team games, tap the team you want to be on (you're placed on the smallest team to start). Names pop up on the TV as people join.
+
+**4. Start.** When everyone's in, tap **START GAME** on the host.
+
+**5. Play.** Each round the wheel picks a category. The question and answers show on the TV; your phone shows the answer buttons.
+- **Teams vote.** Each teammate taps an answer and sees teammates' votes live. The team's answer is its most popular vote (ties go to whichever was picked first), and you can change your vote until time runs out.
+- The question ends as soon as everyone has voted, or when the timer runs out. Faster answers score more.
+- **Hints:** anyone on a team can tap 💡 50/50 to remove two wrong answers for their team. It uses one of the team's hints and halves that question's points.
+- After each question the TV shows the answer, which team picked what, and points. After each round there's a scoreboard. The last round is worth double.
+
+**6. Rematch.** At the end, **REMATCH** goes back to the lobby with the same code, so phones can stay connected and people can swap teams.
+
+**If a phone drops out** (screen locked, Wi-Fi blip), it reconnects by itself and keeps its team and score. Players work best on the same Wi-Fi as the host; mobile data usually works too.
+
+**How it connects:** phones talk directly to the host. A free public PeerJS server only introduces them at the start, so there's nothing to set up and no account needed.
 
 ## Playing on a TV
 
@@ -53,7 +88,9 @@ npm run android:open   # opens Android Studio; press Run with your phone plugged
 | `src/game/` | Pure game logic: categories, scoring, game session (unit-tested) |
 | `src/scene/` | three.js stage, category wheel, confetti and fireworks |
 | `src/audio/` | Synthesised sound effects, adaptive music, haptics |
-| `src/ui/` | Screens: title, setup, round intro, question, reveal, results, settings |
+| `src/ui/` | Screens: title, setup, round intro, question, reveal, results, settings, party lobby/TV screens |
+| `src/net/` | Party networking: host, phone client, message protocol |
+| `src/controller.ts` | The phone controller for party games |
 | `src/data/questions.json` | Question bank |
 | `android/` | Capacitor Android project |
 
@@ -61,7 +98,7 @@ npm run android:open   # opens Android Studio; press Run with your phone plugged
 
 1. ~~Setup~~
 2. ~~Solo prototype~~ (this)
-3. Multiplayer: Firebase room codes, lobby, synced questions, live scoreboard
+3. ~~Multiplayer: room codes, QR join, teams, live scoreboard~~
 4. Call Out head-to-head mechanic, more reveal animations
 5. Bigger question bank
 6. Icon, final name, Play Store internal testing

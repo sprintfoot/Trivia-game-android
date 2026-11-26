@@ -3,6 +3,7 @@ import bank from '../src/data/questions.json';
 import { CATEGORIES } from '../src/game/categories';
 import { scoreAnswer, SCORING } from '../src/game/scoring';
 import { GameSession, mulberry32, type BankQuestion, type GameConfig } from '../src/game/session';
+import { decideTeamAnswer, makeRoomCode } from '../src/game/teams';
 
 const BANK = bank as BankQuestion[];
 const config = (over: Partial<GameConfig> = {}): GameConfig => ({
@@ -169,5 +170,72 @@ describe('hints', () => {
     s.startRound();
     s.nextQuestion();
     expect(s.canUseHint()).toBe(false);
+  });
+});
+
+describe('teams', () => {
+  const teams = [
+    { id: 'a', name: 'A', color: '#fff' },
+    { id: 'b', name: 'B', color: '#000' },
+  ];
+
+  it('scores each team separately and ranks them', () => {
+    const s = new GameSession(config({ hints: 1 }), BANK, mulberry32(21), teams);
+    s.startRound();
+    const q = s.nextQuestion();
+    s.useHint('b');
+    expect(s.hiddenFor('b')).toHaveLength(2);
+    expect(s.hiddenFor('a')).toHaveLength(0);
+    const wrong = (q.answer + 1) % 4;
+    const results = s.submitAll([
+      { teamId: 'a', chosen: wrong, timeLeftMs: 15000 },
+      { teamId: 'b', chosen: q.answer, timeLeftMs: 15000 },
+    ]);
+    expect(results.map((r) => r.correct)).toEqual([false, true]);
+    expect(s.team('b').score).toBe(500);
+    expect(s.team('a').score).toBe(0);
+    expect(s.standings()[0].id).toBe('b');
+  });
+
+  it('treats a team with no pick as out of time', () => {
+    const s = new GameSession(config(), BANK, mulberry32(22), teams);
+    s.startRound();
+    const q = s.nextQuestion();
+    const [a, b] = s.submitAll([{ teamId: 'a', chosen: q.answer, timeLeftMs: 0 }]);
+    expect(a.correct).toBe(true);
+    expect(b.chosen).toBeNull();
+    expect(b.score.total).toBe(0);
+  });
+});
+
+describe('decideTeamAnswer', () => {
+  it('picks the most popular latest vote, ties to the earliest', () => {
+    expect(decideTeamAnswer([])).toEqual({ choice: null, at: null });
+    expect(
+      decideTeamAnswer([
+        { playerId: 'p1', choice: 2, at: 100 },
+        { playerId: 'p2', choice: 1, at: 200 },
+      ]).choice,
+    ).toBe(2);
+    expect(
+      decideTeamAnswer([
+        { playerId: 'p1', choice: 2, at: 100 },
+        { playerId: 'p2', choice: 1, at: 200 },
+        { playerId: 'p3', choice: 1, at: 300 },
+      ]),
+    ).toEqual({ choice: 1, at: 300 });
+    // p1 changes their mind; only the latest vote counts.
+    expect(
+      decideTeamAnswer([
+        { playerId: 'p1', choice: 2, at: 100 },
+        { playerId: 'p2', choice: 1, at: 200 },
+        { playerId: 'p1', choice: 1, at: 250 },
+      ]).choice,
+    ).toBe(1);
+  });
+
+  it('makes readable room codes', () => {
+    const code = makeRoomCode(mulberry32(3));
+    expect(code).toMatch(/^[A-HJKMNP-Z]{4}$/);
   });
 });
