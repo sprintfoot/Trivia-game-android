@@ -1,9 +1,29 @@
 import type { CategoryId } from './categories';
+
+export type AgeGroup = 'kids' | 'teen' | 'adult';
+
+export const AGE_GROUPS: readonly { id: AgeGroup; label: string; detail: string }[] = [
+  { id: 'kids', label: 'Kids', detail: 'Ages 6–10' },
+  { id: 'teen', label: 'Teens', detail: 'Ages 11–15' },
+  { id: 'adult', label: 'Adults', detail: '16 and up' },
+];
+
+/** Which question age levels each group may see. */
+const ALLOWED: Record<AgeGroup, AgeGroup[]> = {
+  kids: ['kids'],
+  teen: ['kids', 'teen'],
+  adult: ['kids', 'teen', 'adult'],
+};
+
+/** Fewer suitable questions than this in a category and we fall back to the whole category. */
+const MIN_POOL = 4;
 import { SCORING, scoreAnswer, type ScoreBreakdown } from './scoring';
 
 export interface BankQuestion {
   id: string;
   category: CategoryId;
+  /** Youngest age group the question suits. Missing means teen. */
+  age?: AgeGroup;
   prompt: string;
   choices: string[];
   /** Index into choices of the correct answer. */
@@ -14,6 +34,8 @@ export interface BankQuestion {
 export interface LiveQuestion extends BankQuestion {
   number: number;
   round: number;
+  /** Choice indices hidden by a 50/50 hint. */
+  hidden: number[];
 }
 
 export interface GameConfig {
@@ -21,6 +43,9 @@ export interface GameConfig {
   rounds: number;
   questionsPerRound: number;
   timeLimitMs: number;
+  ageGroup?: AgeGroup;
+  /** 50/50 hints available for the whole game. */
+  hints?: number;
 }
 
 export interface AnswerResult {
@@ -62,6 +87,7 @@ export class GameSession {
   streak = 0;
   bestStreak = 0;
   correctCount = 0;
+  hintsLeft: number;
   readonly history: AnswerResult[] = [];
 
   private round = 0;
@@ -73,9 +99,13 @@ export class GameSession {
   constructor(config: GameConfig, bank: readonly BankQuestion[], private readonly rng: Rng = Math.random) {
     if (config.categories.length === 0) throw new Error('Pick at least one category');
     this.config = config;
+    this.hintsLeft = config.hints ?? 0;
+    const allowed = ALLOWED[config.ageGroup ?? 'adult'];
     for (const id of config.categories) {
-      const questions = bank.filter((q) => q.category === id);
-      if (questions.length === 0) throw new Error(`No questions for category: ${id}`);
+      const all = bank.filter((q) => q.category === id);
+      if (all.length === 0) throw new Error(`No questions for category: ${id}`);
+      const suitable = all.filter((q) => allowed.includes(q.age ?? 'teen'));
+      const questions = suitable.length >= MIN_POOL ? suitable : all;
       this.byCategory.set(id, questions);
       this.pools.set(id, shuffle(questions, rng));
     }
@@ -130,8 +160,23 @@ export class GameSession {
       answer: order.indexOf(q.answer),
       number: this.history.length + 1,
       round: this.round,
+      hidden: [],
     };
     return this.current;
+  }
+
+  canUseHint(): boolean {
+    return this.hintsLeft > 0 && this.current !== null && this.current.hidden.length === 0;
+  }
+
+  /** 50/50: hides two wrong answers on the current question. Returns the hidden indices. */
+  useHint(): number[] {
+    const q = this.current;
+    if (!q || !this.canUseHint()) throw new Error('No hint available');
+    const wrong = q.choices.map((_, i) => i).filter((i) => i !== q.answer);
+    q.hidden = shuffle(wrong, this.rng).slice(0, 2).sort();
+    this.hintsLeft -= 1;
+    return q.hidden;
   }
 
   /** chosen is null when time ran out. */
@@ -147,6 +192,7 @@ export class GameSession {
       timeLimitMs: this.config.timeLimitMs,
       streakBefore: this.streak,
       multiplier: this.multiplier,
+      hinted: question.hidden.length > 0,
     });
 
     this.streak = correct ? this.streak + 1 : 0;

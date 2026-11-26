@@ -252,6 +252,16 @@ export class Sound {
     this.noise({ dur: 0.03, vol: 0.1, filter: 'highpass', freq: 6000, at: t });
   }
 
+  /** Magic shimmer when a 50/50 hint knocks out two answers. */
+  hint(): void {
+    const t = this.now;
+    [84, 88, 91, 96, 100].forEach((n, i) =>
+      this.tone({ freq: midi(n), type: 'sine', dur: 0.25, vol: 0.06, at: t + i * 0.035 }),
+    );
+    this.noise({ dur: 0.4, vol: 0.12, filter: 'bandpass', freq: 2000, to: 7000, q: 2, at: t });
+    this.tone({ freq: 300, to: 120, type: 'triangle', dur: 0.25, vol: 0.15, at: t + 0.15 });
+  }
+
   /** Rising major arpeggio with sparkle. */
   correct(): void {
     const t = this.now;

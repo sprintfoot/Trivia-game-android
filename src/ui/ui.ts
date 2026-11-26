@@ -1,5 +1,5 @@
 import { CATEGORIES, type Category, type CategoryId } from '../game/categories';
-import type { AnswerResult, GameConfig, LiveQuestion } from '../game/session';
+import { AGE_GROUPS, type AgeGroup, type AnswerResult, type GameConfig, type LiveQuestion } from '../game/session';
 import type { Settings } from '../settings';
 import { sound } from '../audio/sound';
 import { haptics } from '../audio/haptics';
@@ -14,7 +14,17 @@ export const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 function mount(html: string, cls = ''): HTMLElement {
   root.innerHTML = `<section class="screen ${cls}">${html}</section>`;
-  return root.firstElementChild as HTMLElement;
+  const el = root.firstElementChild as HTMLElement;
+  // TV remotes and keyboards: put focus on the screen's main action.
+  requestAnimationFrame(() => el.querySelector<HTMLElement>('[data-focus]')?.focus({ preventScroll: true }));
+  return el;
+}
+
+export const canFullscreen = () => !!document.documentElement.requestFullscreen && !document.fullscreenElement;
+
+export function toggleFullscreen(): void {
+  if (document.fullscreenElement) void document.exitFullscreen();
+  else void document.documentElement.requestFullscreen?.().catch(() => undefined);
 }
 
 function press(el: Element, fn: () => void): void {
@@ -59,35 +69,58 @@ export function showTitle(onSettings: () => void): Promise<void> {
     `<div class="title-wrap">
        <div class="logo"><span class="l1">TRIVIA</span><span class="l2">PARTY</span></div>
        <p class="tagline">Spin. Answer. Brag.</p>
-       <button class="btn primary big" data-play>TAP TO PLAY</button>
+       <button class="btn primary big" data-play data-focus>TAP TO PLAY</button>
      </div>
-     <button class="icon-btn settings-btn" aria-label="Settings" data-settings>⚙️</button>`,
+     <div class="corner-btns">
+       ${canFullscreen() ? '<button class="icon-btn" aria-label="Full screen" data-fs>⛶</button>' : ''}
+       <button class="icon-btn" aria-label="Settings" data-settings>⚙️</button>
+     </div>`,
     'title',
   );
   el.querySelector('[data-settings]')!.addEventListener('click', (e) => {
     e.stopPropagation();
     onSettings();
   });
+  el.querySelector('[data-fs]')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleFullscreen();
+    (e.currentTarget as HTMLElement).remove();
+  });
   return new Promise((resolve) => {
-    el.querySelector('[data-play]')!.addEventListener('click', () => resolve());
+    el.querySelector('[data-play]')!.addEventListener('click', () => {
+      // Going full screen needs a tap, so take the Play tap on phones/TVs in the browser.
+      if (canFullscreen() && window.matchMedia('(pointer: coarse)').matches) toggleFullscreen();
+      resolve();
+    });
   });
 }
 
 // ---------------- Setup ----------------
 
-const ROUND_OPTIONS = [3, 5];
-const QPR_OPTIONS = [3, 5];
-const TIME_OPTIONS = [10, 15, 20];
+const ROUND_OPTIONS = [2, 3, 4, 5, 6];
+const QPR_OPTIONS = [3, 5, 7, 10];
+const TIME_OPTIONS = [10, 15, 20, 30];
+const HINT_OPTIONS = [0, 1, 3, 5];
 
-function segmented(name: string, options: number[], value: number, suffix = ''): string {
+function segmented(name: string, options: (number | string)[], value: number | string, label: (o: number | string) => string = String): string {
   return `<div class="seg" data-seg="${name}">${options
-    .map((o) => `<button class="seg-opt ${o === value ? 'on' : ''}" data-val="${o}">${o}${suffix}</button>`)
+    .map((o) => `<button class="seg-opt ${o === value ? 'on' : ''}" data-val="${o}">${label(o)}</button>`)
     .join('')}</div>`;
 }
 
 export function showSetup(settings: Settings, onSettings: () => void): Promise<GameConfig> {
   const chosen = new Set<CategoryId>(settings.lastCategories ?? CATEGORIES.map((c) => c.id));
-  const vals = { rounds: settings.rounds, qpr: settings.questionsPerRound, time: settings.timeLimitSec };
+  const vals: { rounds: number; qpr: number; time: number; hints: number; age: AgeGroup } = {
+    rounds: settings.rounds,
+    qpr: settings.questionsPerRound,
+    time: settings.timeLimitSec,
+    hints: settings.hints,
+    age: settings.ageGroup,
+  };
+  const ageLabel = (o: number | string) => {
+    const g = AGE_GROUPS.find((a) => a.id === o)!;
+    return `${g.label}<small>${g.detail}</small>`;
+  };
 
   const el = mount(
     `<header class="bar"><h2>Game setup</h2><button class="icon-btn" aria-label="Settings" data-settings>⚙️</button></header>
@@ -98,12 +131,14 @@ export function showSetup(settings: Settings, onSettings: () => void): Promise<G
            `<button class="chip ${chosen.has(c.id) ? 'on' : ''}" data-cat="${c.id}" style="--c:${c.color}">
               <span class="ico">${c.icon}</span>${esc(c.name)}</button>`,
        ).join('')}</div>
+       <h3>Most players are</h3>${segmented('age', AGE_GROUPS.map((a) => a.id), vals.age, ageLabel)}
        <h3>Rounds</h3>${segmented('rounds', ROUND_OPTIONS, vals.rounds)}
        <h3>Questions per round</h3>${segmented('qpr', QPR_OPTIONS, vals.qpr)}
-       <h3>Answer timer</h3>${segmented('time', TIME_OPTIONS, vals.time, 's')}
-       <p class="hint">The last round is worth double points.</p>
+       <h3>Answer timer</h3>${segmented('time', TIME_OPTIONS, vals.time, (o) => `${o}s`)}
+       <h3>50/50 hints per game</h3>${segmented('hints', HINT_OPTIONS, vals.hints, (o) => (o === 0 ? 'Off' : String(o)))}
+       <p class="hint">A hint removes two wrong answers but halves that question's points. The last round is worth double.</p>
      </div>
-     <footer class="foot"><button class="btn primary big" data-start>START GAME</button></footer>`,
+     <footer class="foot"><button class="btn primary big" data-start data-focus>START GAME</button></footer>`,
     'setup',
   );
 
@@ -135,7 +170,9 @@ export function showSetup(settings: Settings, onSettings: () => void): Promise<G
       press(opt, () => {
         seg.querySelectorAll('.seg-opt').forEach((o) => o.classList.remove('on'));
         opt.classList.add('on');
-        vals[seg.dataset.seg as keyof typeof vals] = Number(opt.dataset.val);
+        const key = seg.dataset.seg as keyof typeof vals;
+        if (key === 'age') vals.age = opt.dataset.val as AgeGroup;
+        else vals[key] = Number(opt.dataset.val);
       }),
     );
   });
@@ -149,7 +186,16 @@ export function showSetup(settings: Settings, onSettings: () => void): Promise<G
       settings.rounds = vals.rounds;
       settings.questionsPerRound = vals.qpr;
       settings.timeLimitSec = vals.time;
-      resolve({ categories, rounds: vals.rounds, questionsPerRound: vals.qpr, timeLimitMs: vals.time * 1000 });
+      settings.hints = vals.hints;
+      settings.ageGroup = vals.age;
+      resolve({
+        categories,
+        rounds: vals.rounds,
+        questionsPerRound: vals.qpr,
+        timeLimitMs: vals.time * 1000,
+        ageGroup: vals.age,
+        hints: vals.hints,
+      });
     });
   });
 }
@@ -210,6 +256,9 @@ function hudHtml(h: Hud): string {
 export interface QuestionHooks {
   onTension: (t: number) => void;
   onTick: (urgency: number) => void;
+  /** Hints left, or 0 to hide the button. useHint returns the answer indices to hide. */
+  hintsLeft: number;
+  useHint: () => number[];
 }
 
 export function askQuestion(q: LiveQuestion, cat: Category, timeLimitMs: number, hud: Hud, hooks: QuestionHooks): Promise<AnswerPick> {
@@ -220,10 +269,11 @@ export function askQuestion(q: LiveQuestion, cat: Category, timeLimitMs: number,
          <circle class="prog" cx="50" cy="50" r="44" stroke-dasharray="${RING}" stroke-dashoffset="0"/></svg>
          <span class="secs" data-secs>${Math.ceil(timeLimitMs / 1000)}</span></div>
        <div class="q-card"><div class="q-cat">${cat.icon} ${esc(cat.name)}</div><div class="q-text">${esc(q.prompt)}</div></div>
+       ${hooks.hintsLeft > 0 ? `<button class="hint-btn" data-hint>💡 50/50 <span>${hooks.hintsLeft} left</span></button>` : ''}
        <div class="answers">${q.choices
          .map(
            (c, i) =>
-             `<button class="ans" data-i="${i}" style="--d:${i * 70}ms"><span class="letter">${LETTERS[i]}</span><span class="txt">${esc(c)}</span></button>`,
+             `<button class="ans" data-i="${i}" ${i === 0 ? 'data-focus' : ''} style="--d:${i * 70}ms"><span class="letter">${LETTERS[i]}</span><span class="txt">${esc(c)}</span></button>`,
          )
          .join('')}</div>
      </div>`,
@@ -242,6 +292,8 @@ export function askQuestion(q: LiveQuestion, cat: Category, timeLimitMs: number,
     const finish = (chosen: number | null) => {
       if (done) return;
       done = true;
+      window.removeEventListener('keydown', onKey);
+      hintBtn?.setAttribute('disabled', '');
       const left = Math.max(0, timeLimitMs - (performance.now() - start));
       el.querySelectorAll<HTMLButtonElement>('.ans').forEach((b) => (b.disabled = true));
       if (chosen !== null) el.querySelector(`[data-i="${chosen}"]`)!.classList.add('picked');
@@ -249,14 +301,37 @@ export function askQuestion(q: LiveQuestion, cat: Category, timeLimitMs: number,
       resolve({ chosen, timeLeftMs: chosen === null ? 0 : left });
     };
 
-    el.querySelectorAll<HTMLButtonElement>('.ans').forEach((b) =>
-      b.addEventListener('click', () => {
-        if (done) return;
-        sound.lockIn();
-        haptics.heavy();
-        finish(Number(b.dataset.i));
-      }),
-    );
+    const pick = (i: number) => {
+      const b = el.querySelector<HTMLButtonElement>(`.ans[data-i="${i}"]`);
+      if (done || !b || b.disabled) return;
+      sound.lockIn();
+      haptics.heavy();
+      finish(i);
+    };
+    el.querySelectorAll<HTMLButtonElement>('.ans').forEach((b) => b.addEventListener('click', () => pick(Number(b.dataset.i))));
+
+    const hintBtn = el.querySelector<HTMLButtonElement>('[data-hint]');
+    const hint = () => {
+      if (done || !hintBtn || hintBtn.disabled) return;
+      hintBtn.disabled = true;
+      sound.hint();
+      haptics.tap();
+      for (const i of hooks.useHint()) {
+        const b = el.querySelector<HTMLButtonElement>(`.ans[data-i="${i}"]`)!;
+        b.disabled = true;
+        b.classList.add('gone');
+      }
+    };
+    hintBtn?.addEventListener('click', hint);
+
+    // Keyboard / TV remote: 1-4 or A-D to answer, H for a hint.
+    const onKey = (e: KeyboardEvent) => {
+      const k = e.key.toLowerCase();
+      const idx = '1234'.indexOf(k) >= 0 ? '1234'.indexOf(k) : 'abcd'.indexOf(k);
+      if (idx >= 0 && idx < q.choices.length) pick(idx);
+      else if (k === 'h') hint();
+    };
+    window.addEventListener('keydown', onKey);
 
     const loop = (now: number) => {
       if (done) return;
@@ -303,6 +378,7 @@ export async function showReveal(result: AnswerResult, prevScore: number, onPoin
     if (s.speed) parts.push(`<span>Speed +${s.speed}</span>`);
     if (s.streak) parts.push(`<span class="hot">Streak +${s.streak}</span>`);
     if (s.multiplier > 1) parts.push(`<span class="x2">×${s.multiplier}</span>`);
+    if (s.hinted) parts.push(`<span>Hint ½</span>`);
   }
   const pop = document.createElement('div');
   pop.className = `verdict ${result.correct ? 'good' : 'bad'}`;
@@ -359,7 +435,7 @@ export function showResults(d: ResultsData, onPoints: () => void): Promise<'agai
      </div>
      <footer class="foot two">
        <button class="btn ghost" data-setup>CHANGE SETUP</button>
-       <button class="btn primary" data-again>PLAY AGAIN</button>
+       <button class="btn primary" data-again data-focus>PLAY AGAIN</button>
      </footer>`,
     'results-screen',
   );
@@ -387,9 +463,11 @@ export function openSettings(settings: Settings, onChange: (s: Settings) => void
           .map((q) => `<button class="seg-opt ${settings.quality === q ? 'on' : ''}" data-val="${q}">${q[0].toUpperCase() + q.slice(1)}</button>`)
           .join('')}</div></div>
       <p class="hint">Every sound is synthesised live in the app.</p>
-      <button class="btn primary" data-close>DONE</button>
+      ${canFullscreen() ? '<button class="btn ghost" data-fs>FULL SCREEN</button>' : ''}
+      <button class="btn primary" data-close data-focus>DONE</button>
     </div>`;
   document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.querySelector<HTMLElement>('[data-focus]')?.focus());
 
   overlay.querySelectorAll<HTMLInputElement>('input[data-key]').forEach((inp) =>
     inp.addEventListener('change', () => {
@@ -406,6 +484,10 @@ export function openSettings(settings: Settings, onChange: (s: Settings) => void
       onChange(settings);
     }),
   );
+  overlay.querySelector('[data-fs]')?.addEventListener('click', () => {
+    toggleFullscreen();
+    overlay.remove();
+  });
   const close = () => overlay.remove();
   press(overlay.querySelector('[data-close]')!, close);
   overlay.addEventListener('click', (e) => {

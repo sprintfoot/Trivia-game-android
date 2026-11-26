@@ -116,3 +116,52 @@ describe('GameSession', () => {
     expect(seen.size).toBe(10);
   });
 });
+
+describe('age groups', () => {
+  it('only serves kids questions to kids when enough exist', () => {
+    const s = new GameSession(config({ categories: ['sports'], ageGroup: 'kids', rounds: 1, questionsPerRound: 4 }), BANK, mulberry32(5));
+    s.startRound();
+    while (s.hasNextQuestion()) {
+      const q = s.nextQuestion();
+      expect(q.age).toBe('kids');
+      s.submit(null, 0);
+    }
+  });
+
+  it('never serves adult questions to teens', () => {
+    const s = new GameSession(config({ categories: ['screen', 'food'], ageGroup: 'teen', rounds: 2, questionsPerRound: 5 }), BANK, mulberry32(8));
+    while (s.hasNextRound()) {
+      s.startRound();
+      while (s.hasNextQuestion()) {
+        expect(s.nextQuestion().age).not.toBe('adult');
+        s.submit(null, 0);
+      }
+    }
+  });
+});
+
+describe('hints', () => {
+  it('hides two wrong answers, halves the points and counts down', () => {
+    const s = new GameSession(config({ hints: 1 }), BANK, mulberry32(11));
+    s.startRound();
+    const q = s.nextQuestion();
+    expect(s.canUseHint()).toBe(true);
+    const hidden = s.useHint();
+    expect(hidden).toHaveLength(2);
+    expect(hidden).not.toContain(q.answer);
+    expect(s.hintsLeft).toBe(0);
+    expect(s.canUseHint()).toBe(false);
+    const r = s.submit(q.answer, 15000);
+    expect(r.score.hinted).toBe(true);
+    expect(r.score.total).toBe(500);
+    s.nextQuestion();
+    expect(s.canUseHint()).toBe(false);
+  });
+
+  it('has no hints by default', () => {
+    const s = new GameSession(config(), BANK, mulberry32(12));
+    s.startRound();
+    s.nextQuestion();
+    expect(s.canUseHint()).toBe(false);
+  });
+});

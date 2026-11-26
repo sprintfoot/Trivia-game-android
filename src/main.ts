@@ -68,6 +68,8 @@ async function playGame(config: GameConfig): Promise<'again' | 'setup'> {
           sound.clockTick(u);
           haptics.tick();
         },
+        hintsLeft: session.hintsLeft,
+        useHint: () => session.useHint(),
       });
       const before = session.score;
       const result = session.submit(pick.chosen, pick.timeLeftMs);
