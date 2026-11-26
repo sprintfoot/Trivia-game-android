@@ -2,6 +2,7 @@ import { CATEGORIES, DEFAULT_CATEGORIES, type Category, type CategoryId } from '
 import { AGE_GROUPS, type AgeGroup, type AnswerResult, type GameConfig, type LiveQuestion } from '../game/session';
 import type { Settings } from '../settings';
 import { sound } from '../audio/sound';
+import { pictureHtml, startReveal } from './picture';
 import { haptics } from '../audio/haptics';
 
 const root = document.getElementById('ui')!;
@@ -296,7 +297,7 @@ export function askQuestion(q: LiveQuestion, cat: Category, timeLimitMs: number,
        <div class="timer"><svg viewBox="0 0 100 100"><circle class="track" cx="50" cy="50" r="44"/>
          <circle class="prog" cx="50" cy="50" r="44" stroke-dasharray="${RING}" stroke-dashoffset="0"/></svg>
          <span class="secs" data-secs>${Math.ceil(timeLimitMs / 1000)}</span></div>
-       <div class="q-card"><div class="q-cat">${cat.icon} ${esc(cat.name)}</div><div class="q-text">${esc(q.prompt)}</div></div>
+       <div class="q-card ${q.picture ? 'has-pic' : ''}"><div class="q-cat">${cat.icon} ${esc(cat.name)}</div><div class="q-text">${esc(q.prompt)}</div>${q.picture ? pictureHtml(q.picture) : ''}</div>
        ${hooks.hintsLeft > 0 ? `<button class="hint-btn" data-hint>💡 50/50 <span>${hooks.hintsLeft} left</span></button>` : ''}
        <div class="answers">${q.choices
          .map(
@@ -311,6 +312,7 @@ export function askQuestion(q: LiveQuestion, cat: Category, timeLimitMs: number,
   const secs = el.querySelector<HTMLElement>('[data-secs]')!;
   const timerEl = el.querySelector<HTMLElement>('.timer')!;
   sound.whoosh();
+  const pic = q.picture ? startReveal(el, q.picture, timeLimitMs) : null;
 
   return new Promise((resolve) => {
     const start = performance.now() + 350; // let the card animate in before the clock starts
@@ -321,6 +323,7 @@ export function askQuestion(q: LiveQuestion, cat: Category, timeLimitMs: number,
       if (done) return;
       done = true;
       window.removeEventListener('keydown', onKey);
+      pic?.finish();
       hintBtn?.setAttribute('disabled', '');
       const left = Math.max(0, timeLimitMs - (performance.now() - start));
       el.querySelectorAll<HTMLButtonElement>('.ans').forEach((b) => (b.disabled = true));

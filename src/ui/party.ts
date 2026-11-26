@@ -5,6 +5,7 @@ import type { PartyHost } from '../net/host';
 import { joinUrl } from '../net/protocol';
 import { sound } from '../audio/sound';
 import { countUp, esc, mount, press, wait } from './ui';
+import { pictureHtml, startReveal } from './picture';
 
 // ---------------- Lobby ----------------
 
@@ -109,7 +110,7 @@ export function tvQuestion(
        <div class="timer"><svg viewBox="0 0 100 100"><circle class="track" cx="50" cy="50" r="44"/>
          <circle class="prog" cx="50" cy="50" r="44" stroke-dasharray="${RING}" stroke-dashoffset="0"/></svg>
          <span class="secs" data-secs>${Math.ceil(timeLimitMs / 1000)}</span></div>
-       <div class="q-card"><div class="q-cat">${cat.icon} ${esc(cat.name)}</div><div class="q-text">${esc(q.prompt)}</div></div>
+       <div class="q-card ${q.picture ? 'has-pic' : ''}"><div class="q-cat">${cat.icon} ${esc(cat.name)}</div><div class="q-text">${esc(q.prompt)}</div>${q.picture ? pictureHtml(q.picture) : ''}</div>
        <div class="answers">${q.choices
          .map(
            (c, i) =>
@@ -121,6 +122,7 @@ export function tvQuestion(
     'question party-q',
   );
   sound.whoosh();
+  const pic = q.picture ? startReveal(el, q.picture, timeLimitMs) : null;
   const prog = el.querySelector<SVGCircleElement>('.prog')!;
   const secs = el.querySelector<HTMLElement>('[data-secs]')!;
   const timerEl = el.querySelector<HTMLElement>('.timer')!;
@@ -151,6 +153,7 @@ export function tvQuestion(
       lastSec = s;
       if (left <= 0 || (now > start && hooks.allAnswered())) {
         hooks.onTension(0);
+        pic?.finish();
         resolve();
         return;
       }

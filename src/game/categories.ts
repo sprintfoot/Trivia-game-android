@@ -16,7 +16,8 @@ export type CategoryId =
   | 'holidays'
   | 'brands'
   | 'decades'
-  | 'tech';
+  | 'tech'
+  | 'pictures';
 
 export interface Category {
   id: CategoryId;
@@ -27,6 +28,7 @@ export interface Category {
 
 export const CATEGORIES: readonly Category[] = [
   { id: 'general', name: 'General Knowledge', icon: '💡', color: '#ffcc33' },
+  { id: 'pictures', name: 'Picture Reveal', icon: '🖼️', color: '#00e0c6' },
   { id: 'screen', name: 'Movies', icon: '🎬', color: '#ff4fa3' },
   { id: 'disney', name: 'Disney & Pixar', icon: '🏰', color: '#5ab4ff' },
   { id: 'tv', name: 'TV Shows', icon: '📺', color: '#ff7ad9' },
@@ -47,7 +49,7 @@ export const CATEGORIES: readonly Category[] = [
 ];
 
 /** Picked on first launch; players can change them on the setup screen. */
-export const DEFAULT_CATEGORIES: readonly CategoryId[] = ['general', 'screen', 'disney', 'tv', 'music', 'animals', 'sports', 'food'];
+export const DEFAULT_CATEGORIES: readonly CategoryId[] = ['general', 'pictures', 'screen', 'disney', 'tv', 'music', 'animals', 'sports', 'food'];
 
 export function getCategory(id: CategoryId): Category {
   const c = CATEGORIES.find((x) => x.id === id);

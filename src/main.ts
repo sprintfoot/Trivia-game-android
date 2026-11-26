@@ -1,7 +1,7 @@
 import './styles.css';
-import bank from './data/questions.json';
+import { BANK } from './data/bank';
 import { CATEGORIES, getCategory, type Category } from './game/categories';
-import { GameSession, type BankQuestion, type GameConfig } from './game/session';
+import { GameSession, type GameConfig } from './game/session';
 import { decideTeamAnswer } from './game/teams';
 import { PartyHost } from './net/host';
 import { PartyClient } from './net/client';
@@ -14,7 +14,6 @@ import { haptics, setHapticsEnabled } from './audio/haptics';
 import { loadSettings, saveSettings, type Settings } from './settings';
 import * as ui from './ui/ui';
 
-const BANK = bank as BankQuestion[];
 const settings = loadSettings();
 const stage = new Stage(document.getElementById('stage') as HTMLCanvasElement, settings.quality);
 stage.onFirework = () => sound.firework();
@@ -195,6 +194,7 @@ async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<voi
           hidden: p.teamId ? session.hiddenFor(p.teamId) : [],
           hintsLeft: p.teamId && session.teams.some((t) => t.id === p.teamId) ? session.team(p.teamId).hintsLeft : 0,
           teamSize: p.teamId ? host.membersOf(p.teamId).length : 1,
+          picture: !!q.picture,
         }));
 
         const tv = party.tvQuestion(

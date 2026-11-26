@@ -56,6 +56,15 @@ Type your name. In team games, tap the team you want to be on (you're placed on 
 - **Phone or tablet + TV:** turn the phone sideways (the layout switches to landscape) and cast or mirror the screen to the TV. The app runs full screen with the system bars hidden.
 - **Laptop + HDMI:** run the web version, press the ⛶ full-screen button on the title screen.
 
+## Picture Reveal rounds
+
+The **Picture Reveal** category (89 questions) has three kinds of picture that uncover while the clock runs, so faster guesses score more:
+- **Flags:** a 6×4 grid of tiles flips away to reveal a country's flag.
+- **Emoji movies:** emoji clues pop in one by one and spell out a film (🦁👑 → The Lion King).
+- **Zoom out:** starts zoomed right into an animal and slowly pulls back.
+
+No photos, movie stills or brand logos are bundled, because those are copyrighted. Flags are drawn from the MIT-licensed [flag-icons](https://github.com/lipis/flag-icons) project (licence in `src/assets/flags/LICENSE`), and emoji come from the phone's own emoji font. In party games, the picture shows on the TV and phones show the answer buttons.
+
 ## Game options
 
 - Pick any mix of categories, 2–6 rounds, 3/5/7/10 questions per round, and a 10–30 second timer.

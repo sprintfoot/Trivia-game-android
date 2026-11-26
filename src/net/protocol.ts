@@ -47,6 +47,8 @@ export type HostMsg =
       hidden: number[];
       hintsLeft: number;
       teamSize: number;
+      /** The TV is showing a picture for this question. */
+      picture: boolean;
     }
   | { t: 'votes'; qid: number; votes: { playerId: string; name: string; choice: number }[]; decided: boolean }
   | { t: 'hint'; qid: number; hidden: number[]; hintsLeft: number }

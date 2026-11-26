@@ -19,6 +19,12 @@ const ALLOWED: Record<AgeGroup, AgeGroup[]> = {
 const MIN_POOL = 4;
 import { SCORING, scoreAnswer, type ScoreBreakdown } from './scoring';
 
+/** A picture slowly uncovered during the question. Drawn on the device; no photos or logos. */
+export type Picture =
+  | { kind: 'flag'; code: string }
+  | { kind: 'emoji'; clues: string[] }
+  | { kind: 'zoom'; emoji: string; x: number; y: number };
+
 export interface BankQuestion {
   id: string;
   category: CategoryId;
@@ -28,6 +34,7 @@ export interface BankQuestion {
   choices: string[];
   /** Index into choices of the correct answer. */
   answer: number;
+  picture?: Picture;
 }
 
 /** A question as shown to a player: choices shuffled, answer index remapped. */

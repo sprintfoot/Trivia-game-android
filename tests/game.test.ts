@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import bank from '../src/data/questions.json';
+import { BANK } from '../src/data/bank';
 import { CATEGORIES } from '../src/game/categories';
 import { scoreAnswer, SCORING } from '../src/game/scoring';
-import { GameSession, mulberry32, type BankQuestion, type GameConfig } from '../src/game/session';
+import { GameSession, mulberry32, type GameConfig } from '../src/game/session';
 import { decideTeamAnswer, makeRoomCode } from '../src/game/teams';
 
-const BANK = bank as BankQuestion[];
 const config = (over: Partial<GameConfig> = {}): GameConfig => ({
   categories: ['science', 'history', 'music'],
   rounds: 3,
@@ -121,6 +120,20 @@ describe('GameSession', () => {
       }
     }
     expect(seen.size).toBe(10);
+  });
+});
+
+describe('picture questions', () => {
+  it('builds flag, emoji and zoom rounds with four distinct choices', () => {
+    const pics = BANK.filter((q) => q.picture);
+    expect(pics.length).toBeGreaterThanOrEqual(80);
+    expect(new Set(pics.map((q) => q.picture!.kind))).toEqual(new Set(['flag', 'emoji', 'zoom']));
+    for (const q of pics) {
+      expect(q.category).toBe('pictures');
+      expect(new Set(q.choices).size).toBe(4);
+    }
+    const france = pics.find((q) => q.id === 'flag-fr')!;
+    expect(france.choices[france.answer]).toBe('France');
   });
 });
 

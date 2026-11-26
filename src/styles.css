@@ -1600,3 +1600,118 @@ button:focus-visible {
     width: 48%;
   }
 }
+
+/* ---------- picture reveal ---------- */
+
+.pic {
+  margin-top: 12px;
+  border-radius: 14px;
+  overflow: hidden;
+  position: relative;
+  background: #0d0a26;
+  display: grid;
+  place-items: center;
+}
+.pic-flag {
+  aspect-ratio: 4 / 3;
+  max-height: 32vh;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0 0 24px color-mix(in srgb, var(--c) 40%, transparent);
+}
+.pic-flag img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.pic-flag .tiles {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  perspective: 600px;
+}
+.pic-flag .tiles i {
+  background: linear-gradient(135deg, #2a1d70, #150e3d);
+  border: 1px solid rgba(160, 140, 255, 0.25);
+  display: grid;
+  place-items: center;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s;
+  backface-visibility: hidden;
+}
+.pic-flag .tiles i::after {
+  content: '?';
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.18);
+  font-size: 18px;
+}
+.pic-flag .tiles i.off {
+  transform: rotateY(90deg);
+  opacity: 0;
+}
+.pic-emoji {
+  min-height: 96px;
+  display: flex;
+  justify-content: center;
+  gap: 4vw;
+  padding: 12px;
+  font-size: clamp(44px, 12vw, 92px);
+}
+.pic-emoji span {
+  opacity: 0;
+  transform: scale(0.2) rotate(-30deg);
+  transition: transform 0.5s cubic-bezier(0.2, 1.8, 0.4, 1), opacity 0.3s;
+}
+.pic-emoji span.on {
+  opacity: 1;
+  transform: none;
+}
+.pic-zoom {
+  width: min(100%, 34vh);
+  aspect-ratio: 1;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 50%;
+  border: 3px solid var(--c);
+  box-shadow: 0 0 28px color-mix(in srgb, var(--c) 50%, transparent), inset 0 0 30px rgba(0, 0, 0, 0.6);
+}
+.pic-zoom span {
+  font-size: min(24vh, 150px);
+  line-height: 1;
+  display: block;
+  will-change: transform;
+}
+.q-card.has-pic .q-text {
+  font-size: clamp(18px, 4.6vw, 24px);
+}
+.ctl-look {
+  display: block;
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--gold);
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  .pic-flag,
+  .pic-zoom {
+    max-height: 38vh;
+  }
+  .pic-emoji {
+    min-height: 0;
+    font-size: 40px;
+    padding: 4px;
+  }
+}
+@media (orientation: landscape) and (min-width: 1100px) {
+  .pic-flag,
+  .pic-zoom {
+    max-height: 40vh;
+  }
+  .pic-zoom span {
+    font-size: 26vh;
+  }
+  .pic-emoji {
+    font-size: 7vw;
+  }
+}

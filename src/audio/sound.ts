@@ -262,6 +262,20 @@ export class Sound {
     this.tone({ freq: 300, to: 120, type: 'triangle', dur: 0.25, vol: 0.15, at: t + 0.15 });
   }
 
+  /** Soft card-flip for picture tiles turning over. */
+  tileFlip(): void {
+    const t = this.now;
+    this.noise({ dur: 0.07, vol: 0.1, filter: 'bandpass', freq: 2400 + Math.random() * 1200, q: 3, at: t });
+    this.tone({ freq: 500 + Math.random() * 200, to: 900, type: 'triangle', dur: 0.06, vol: 0.04, at: t });
+  }
+
+  /** Bubbly pop for each emoji clue appearing, rising in pitch. */
+  pop(n: number): void {
+    const t = this.now;
+    this.tone({ freq: midi(72 + n * 4), to: midi(84 + n * 4), type: 'sine', dur: 0.12, vol: 0.18, at: t });
+    this.noise({ dur: 0.04, vol: 0.06, filter: 'highpass', freq: 4000, at: t });
+  }
+
   /** Rising major arpeggio with sparkle. */
   correct(): void {
     const t = this.now;
