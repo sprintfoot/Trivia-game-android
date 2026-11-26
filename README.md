@@ -90,6 +90,9 @@ Both are on by default and can be switched off in setup under **Special rounds**
 - **⚡ Lightning round:** five quick questions, eight seconds each, from all your categories, just before the final round.
 - **🎲 Final wager:** one last question. Each team bets some or all of its points (at least 500 can always be bet, so nobody is shut out). Right wins the bet, wrong loses it.
 
+## Who Am I?
+
+The **Who Am I?** category (40 famous people: painters, musicians, composers, actors, directors, athletes and writers) shows four clues, one at a time, hardest first. Answer early on fewer clues for more points.
 ## Staten Island
 
 The **Staten Island** category (35 questions) covers the ferry, the bridges, neighborhoods, landmarks, history, food, sports and famous Staten Islanders. Facts were checked against public sources. It's off by default, so tick it in setup.

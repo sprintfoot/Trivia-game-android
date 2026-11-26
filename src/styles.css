@@ -2515,6 +2515,78 @@ button:focus-visible {
   to { transform: translateY(-6px); }
 }
 
+/* ---------- who am I? clues ---------- */
+.pic-clues {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: stretch;
+  width: 100%;
+  text-align: left;
+}
+.pic-clues li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid color-mix(in srgb, var(--c) 40%, transparent);
+  font-size: clamp(14px, 2.2vh, 20px);
+  font-weight: 600;
+  line-height: 1.25;
+  opacity: 0.45;
+  transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+.pic-clues li span {
+  filter: blur(6px);
+  transition: filter 0.45s ease;
+}
+.pic-clues li.on {
+  opacity: 1;
+  animation: clue-in 0.45s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+.pic-clues li.on span {
+  filter: none;
+}
+@keyframes clue-in {
+  from { transform: translateX(-14px) scale(0.97); }
+  to { transform: none; }
+}
+.pic-clues li b {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--c);
+  color: #12093a;
+  font-size: 14px;
+}
+@media (orientation: portrait) and (max-height: 760px) {
+  /* The category label already says "Who am I?". */
+  .q-card:has(.pic-clues) .q-text {
+    display: none;
+  }
+  .pic-clues {
+    gap: 4px;
+    margin-top: 6px;
+  }
+  .pic-clues li {
+    padding: 5px 10px;
+    font-size: 13px;
+  }
+  .pic-clues li b {
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+  }
+}
+
 /* ---------- home button ---------- */
 .home-btn {
   position: fixed;
