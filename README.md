@@ -122,6 +122,10 @@ Setup steps are at the top of `scripts/voice/gen.py`. A test fails if any line i
 
 All music is original and synthesised live in the app: a game-show theme on the title and setup screens, a "here we go" fanfare when a game starts, and adaptive music during questions that speeds up as the timer runs down.
 
+## Getting home
+
+Tap 🏠 in the top-left corner (or press Back or Escape) to return to the title screen. During a game you're asked first. If you're hosting, this closes the room and every phone is told the game ended. On a phone it leaves the room, and before the game starts your name is removed from the lobby.
+
 ## Game options
 
 - **Mix categories** (on by default): every round mixes your chosen categories one question at a time, so a picture can follow a tune and then a trivia question. Turn it off to spin the wheel for one category per round instead.
