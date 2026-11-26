@@ -600,3 +600,61 @@ describe('holiday packs', async () => {
     for (const c of PACK_CATEGORIES) expect(BANK.filter((q) => q.category === c).length).toBeGreaterThanOrEqual(15);
   });
 });
+
+describe('daily challenge', async () => {
+  const daily = await import('../src/game/daily');
+  const { emptyHall, addGame } = await import('../src/game/hall');
+
+  const play = (key: string) => {
+    const s = new GameSession(daily.dailyConfig(), BANK, mulberry32(daily.dailySeed(key)));
+    const ids: string[] = [];
+    while (s.hasNextRound()) {
+      s.startRound();
+      while (s.hasNextQuestion()) {
+        const q = s.nextQuestion();
+        ids.push(q.id);
+        s.submit(q.answer, 10000);
+      }
+    }
+    return { s, ids };
+  };
+
+  it('deals the same 10 questions to everyone on the same day, and new ones the next day', () => {
+    const a = play('2026-11-26');
+    const b = play('2026-11-26');
+    const c = play('2026-11-27');
+    expect(a.ids).toHaveLength(daily.DAILY_QUESTIONS);
+    expect(a.ids).toEqual(b.ids);
+    expect(c.ids).not.toEqual(a.ids);
+    expect(new Set(a.ids).size).toBe(daily.DAILY_QUESTIONS);
+  });
+
+  it('counts a streak of days in a row', () => {
+    const rec = (d: string) => ({ at: 0, mode: 'solo' as const, entries: [{ name: 'You', score: 100, correct: 5, answered: 10, bestStreak: 2, color: '#fff' }], awards: [], daily: d });
+    let hall = emptyHall();
+    for (const d of ['2026-11-22', '2026-11-24', '2026-11-25']) hall = addGame(hall, rec(d));
+    const today = new Date(2026, 10, 26);
+    expect(daily.dailyStreak(hall, today)).toBe(2); // yesterday and the day before still count
+    expect(daily.todaysDaily(hall, today)).toBeNull();
+    hall = addGame(hall, rec('2026-11-26'));
+    expect(daily.dailyStreak(hall, today)).toBe(3);
+    expect(daily.todaysDaily(hall, today)?.score).toBe(100);
+    expect(daily.dailyStreak(hall, new Date(2026, 10, 29))).toBe(0);
+  });
+
+  it('makes a spoiler-free share text', () => {
+    const { s } = play('2026-11-26');
+    const text = daily.shareText('2026-11-26', s.history, s.score, 3);
+    expect(text).toContain('🟩'.repeat(10));
+    expect(text).toContain('10/10');
+    expect(text).toContain('3-day streak');
+    for (const r of s.history) {
+      const ans = r.question.choices[r.question.answer];
+      if (ans.length > 3) expect(text).not.toContain(ans);
+    }
+  });
+
+  it('uses local dates', () => {
+    expect(daily.dateKey(new Date(2026, 0, 5))).toBe('2026-01-05');
+  });
+});

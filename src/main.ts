@@ -20,6 +20,8 @@ import { isTyped, parseGuess } from './game/session';
 import { computeAwards } from './game/awards';
 import { addGame, gameRecord, loadHall, saveHall, topScores, emptyHall } from './game/hall';
 import { awardsHtml, showHall } from './ui/hall';
+import { dailyConfig, dailySeed, dailyStreak, dateKey, shareText, todaysDaily } from './game/daily';
+import { mulberry32 } from './game/session';
 import { initHome, setHome } from './ui/home';
 
 const settings = loadSettings();
@@ -39,8 +41,12 @@ function applySettings(s: Settings): void {
 applySettings(settings);
 const openSettings = () => ui.openSettings(settings, applySettings);
 
-async function playGame(config: GameConfig): Promise<'again' | 'setup'> {
-  const session = new GameSession(config, BANK);
+async function playGame(config: GameConfig, daily = false): Promise<'again' | 'setup'> {
+  const today = new Date();
+  const key = dateKey(today);
+  // The daily challenge deals the same questions to everyone today.
+  const session = daily ? new GameSession(config, BANK, mulberry32(dailySeed(key))) : new GameSession(config, BANK);
+  const alreadyPlayed = daily ? todaysDaily(loadHall(), today) : null;
   setHome({ mode: 'confirm', title: 'Quit this game?', detail: 'Your score so far will be lost.' });
   stage.wheel.build(config.categories.map(getCategory));
   sound.introStinger();
@@ -126,6 +132,8 @@ async function playGame(config: GameConfig): Promise<'again' | 'setup'> {
   const me = { ...session.teams[0], name: settings.playerName?.trim() || 'You' };
   const awards = computeAwards(session.history, [me]);
   const rec = gameRecord('solo', [me], session.history, awards);
+  // Only the first daily run of the day counts; replays are practice.
+  if (daily && !alreadyPlayed) rec.daily = key;
   const hall = addGame(loadHall(), rec);
   saveHall(hall);
   const rank = topScores(hall, 10).findIndex((e) => e.at === rec.at && e.score === me.score) + 1;
@@ -140,6 +148,13 @@ async function playGame(config: GameConfig): Promise<'again' | 'setup'> {
       previousBest,
       awardsHtml: awardsHtml(awards),
       hallRank: rank || undefined,
+      daily: daily
+        ? {
+            streak: dailyStreak(hall, today),
+            share: shareText(key, session.history, session.score, dailyStreak(hall, today)),
+            practiceOf: alreadyPlayed?.score,
+          }
+        : undefined,
     },
     () => sound.points(),
   );
@@ -501,7 +516,9 @@ async function main(): Promise<void> {
     stage.setAccent('#38e1ff');
     sound.setMusic('intro');
     setHome({ mode: 'hidden' });
-    const choice = await ui.showTitle(openSettings);
+    const todayDone = todaysDaily(loadHall(), new Date());
+    const streak = dailyStreak(loadHall(), new Date());
+    const choice = await ui.showTitle(openSettings, todayDone ? `✓ done${streak > 1 ? ` · 🔥${streak}` : ''}` : streak > 0 ? `🔥${streak}` : 'new!');
     sound.unlock();
     applySettings(settings);
     sound.chime();
@@ -509,6 +526,13 @@ async function main(): Promise<void> {
 
     if (choice === 'join') {
       await joinParty();
+      continue;
+    }
+    if (choice === 'daily') {
+      for (;;) {
+        const next = await playGame(dailyConfig(), true);
+        if (next === 'setup') break;
+      }
       continue;
     }
     if (choice === 'hall') {

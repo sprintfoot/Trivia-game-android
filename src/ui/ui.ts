@@ -69,9 +69,9 @@ export function countUp(el: HTMLElement, from: number, to: number, ms: number, o
 
 // ---------------- Title ----------------
 
-export type TitleChoice = 'solo' | 'host' | 'join' | 'hall';
+export type TitleChoice = 'solo' | 'host' | 'join' | 'hall' | 'daily';
 
-export function showTitle(onSettings: () => void): Promise<TitleChoice> {
+export function showTitle(onSettings: () => void, dailyBadge = ''): Promise<TitleChoice> {
   const el = mount(
     `<div class="title-wrap">
        <div class="brand">
@@ -85,7 +85,10 @@ export function showTitle(onSettings: () => void): Promise<TitleChoice> {
            <button class="btn ghost" data-choice="join">JOIN A GAME</button>
            <button class="btn ghost" data-choice="solo">PLAY SOLO</button>
          </div>
-         <button class="btn link hof-btn" data-choice="hall">🏆 Hall of Fame</button>
+         <div class="title-links">
+           <button class="btn link" data-choice="daily">📅 Daily Challenge${dailyBadge ? ` <small>${dailyBadge}</small>` : ''}</button>
+           <button class="btn link hof-btn" data-choice="hall">🏆 Hall of Fame</button>
+         </div>
        </div>
      </div>
      <div class="corner-btns">
@@ -108,7 +111,7 @@ export function showTitle(onSettings: () => void): Promise<TitleChoice> {
       b.addEventListener('click', () => {
         const choice = b.dataset.choice as TitleChoice;
         // Going full screen needs a tap; the TV/host screen is where it matters.
-        if (choice !== 'join' && choice !== 'hall' && canFullscreen() && window.matchMedia('(pointer: coarse)').matches) toggleFullscreen();
+        if (choice !== 'join' && choice !== 'hall' && choice !== 'daily' && canFullscreen() && window.matchMedia('(pointer: coarse)').matches) toggleFullscreen();
         resolve(choice);
       }),
     );
@@ -595,6 +598,8 @@ export interface ResultsData {
   awardsHtml?: string;
   /** Place in the hall of fame's top 10, if it made it. */
   hallRank?: number;
+  /** Daily challenge extras: streak, a result to share, and today's counted score if this was a replay. */
+  daily?: { streak: number; share: string; practiceOf?: number };
 }
 
 export function showResults(d: ResultsData, onPoints: () => void): Promise<'again' | 'setup'> {
@@ -610,20 +615,57 @@ export function showResults(d: ResultsData, onPoints: () => void): Promise<'agai
          <div><b>${d.bestStreak}</b><span>best streak</span></div>
        </div>
        ${d.hallRank ? `<div class="r-hof">🏆 #${d.hallRank} in the Hall of Fame!</div>` : ''}
+       ${
+         d.daily
+           ? `<div class="r-daily">
+                <p>${d.daily.practiceOf !== undefined ? `Practice run. Today's score that counts: <b>${d.daily.practiceOf.toLocaleString()}</b>` : `📅 Daily Challenge done!${d.daily.streak > 1 ? ` 🔥 ${d.daily.streak}-day streak` : ''}`}</p>
+                <pre class="r-share">${esc(d.daily.share)}</pre>
+                <button class="btn ghost" data-share>📋 SHARE RESULT</button>
+                <p class="hint">New questions tomorrow.</p>
+              </div>`
+           : ''
+       }
        ${d.awardsHtml ?? ''}
        ${!d.newBest && d.previousBest ? `<p class="hint">Personal best: ${d.previousBest.toLocaleString()}</p>` : ''}
      </div>
      <footer class="foot two">
-       <button class="btn ghost" data-setup>CHANGE SETUP</button>
-       <button class="btn primary" data-again data-focus>PLAY AGAIN</button>
+       <button class="btn ghost" data-setup>${d.daily ? 'HOME' : 'CHANGE SETUP'}</button>
+       <button class="btn primary" data-again data-focus>${d.daily ? 'PRACTICE AGAIN' : 'PLAY AGAIN'}</button>
      </footer>`,
     'results-screen',
   );
   void countUp(el.querySelector<HTMLElement>('[data-final]')!, 0, d.score, 2200, onPoints);
+  const share = el.querySelector<HTMLButtonElement>('[data-share]');
+  if (share && d.daily) {
+    const text = d.daily.share;
+    press(share, () => {
+      const done = () => (share.textContent = '✓ COPIED');
+      if (navigator.share && window.matchMedia('(pointer: coarse)').matches) void navigator.share({ text }).catch(() => undefined);
+      else if (navigator.clipboard) void navigator.clipboard.writeText(text).then(done, () => (copyFallback(text) ? done() : (share.textContent = 'COPY FAILED')));
+      else if (copyFallback(text)) done();
+    });
+  }
   return new Promise((resolve) => {
     press(el.querySelector('[data-again]')!, () => resolve('again'));
     press(el.querySelector('[data-setup]')!, () => resolve('setup'));
   });
+}
+
+/** Older WebViews: copy through a hidden text box. */
+function copyFallback(text: string): boolean {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+  document.body.appendChild(ta);
+  ta.select();
+  let ok = false;
+  try {
+    ok = document.execCommand('copy');
+  } catch {
+    ok = false;
+  }
+  ta.remove();
+  return ok;
 }
 
 // ---------------- Settings ----------------
