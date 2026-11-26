@@ -482,18 +482,21 @@ export function showResults(d: ResultsData, onPoints: () => void): Promise<'agai
 export function openSettings(settings: Settings, onChange: (s: Settings) => void): void {
   const overlay = document.createElement('div');
   overlay.className = 'modal';
-  const toggle = (key: 'sound' | 'music' | 'haptics', label: string) =>
+  type Key = 'sound' | 'music' | 'haptics' | 'voice' | 'readQuestions';
+  const toggle = (key: Key, label: string) =>
     `<label class="row"><span>${label}</span><input type="checkbox" data-key="${key}" ${settings[key] ? 'checked' : ''}/><i class="sw"></i></label>`;
   overlay.innerHTML = `<div class="sheet">
       <h2>Settings</h2>
       ${toggle('sound', 'Sound effects')}
       ${toggle('music', 'Music')}
+      ${toggle('voice', 'Host voice (funny one-liners)')}
+      ${toggle('readQuestions', 'Read questions aloud')}
       ${toggle('haptics', 'Vibration')}
       <div class="row col"><span>Graphics</span>
         <div class="seg" data-q>${(['auto', 'high', 'low'] as const)
           .map((q) => `<button class="seg-opt ${settings.quality === q ? 'on' : ''}" data-val="${q}">${q[0].toUpperCase() + q.slice(1)}</button>`)
           .join('')}</div></div>
-      <p class="hint">Every sound is synthesised live in the app.</p>
+      <p class="hint">Every sound is synthesised live in the app. The host voice uses your device's built-in speech.</p>
       ${canFullscreen() ? '<button class="btn ghost" data-fs>FULL SCREEN</button>' : ''}
       <button class="btn primary" data-close data-focus>DONE</button>
     </div>`;
@@ -502,7 +505,7 @@ export function openSettings(settings: Settings, onChange: (s: Settings) => void
 
   overlay.querySelectorAll<HTMLInputElement>('input[data-key]').forEach((inp) =>
     inp.addEventListener('change', () => {
-      settings[inp.dataset.key as 'sound' | 'music' | 'haptics'] = inp.checked;
+      settings[inp.dataset.key as Key] = inp.checked;
       onChange(settings);
       sound.toggle(inp.checked);
     }),

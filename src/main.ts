@@ -11,6 +11,7 @@ import * as party from './ui/party';
 import { Stage } from './scene/stage';
 import { sound } from './audio/sound';
 import { haptics, setHapticsEnabled } from './audio/haptics';
+import { voice } from './audio/voice';
 import { loadSettings, saveSettings, type Settings } from './settings';
 import * as ui from './ui/ui';
 
@@ -22,6 +23,9 @@ function applySettings(s: Settings): void {
   sound.setEnabled(s.sound);
   sound.setMusicEnabled(s.music);
   setHapticsEnabled(s.haptics);
+  voice.enabled = s.voice;
+  voice.readQuestions = s.readQuestions;
+  if (!s.voice) voice.stop();
   stage.setQuality(s.quality);
   saveSettings(s);
 }
@@ -31,6 +35,7 @@ const openSettings = () => ui.openSettings(settings, applySettings);
 async function playGame(config: GameConfig): Promise<'again' | 'setup'> {
   const session = new GameSession(config, BANK);
   stage.wheel.build(config.categories.map(getCategory));
+  voice.line('intro');
 
   while (session.hasNextRound()) {
     const cat = await spinForRound(session, null);
@@ -48,6 +53,7 @@ async function playGame(config: GameConfig): Promise<'again' | 'setup'> {
         totalQuestions: session.totalQuestions,
         multiplier: session.multiplier,
       };
+      voice.question(q.prompt, q.choices);
       const pick = await ui.askQuestion(q, cat, config.timeLimitMs, hud, {
         onTension: (t) => {
           stage.setTension(t);
@@ -58,11 +64,19 @@ async function playGame(config: GameConfig): Promise<'again' | 'setup'> {
           haptics.tick();
         },
         hintsLeft: session.hintsLeft,
-        useHint: () => session.useHint(),
+        useHint: () => {
+          voice.line('hint');
+          return session.useHint();
+        },
       });
       const before = session.score;
       const result = session.submit(pick.chosen, pick.timeLeftMs);
 
+      if (result.correct) {
+        if (result.streak >= 3) voice.line('streak', { n: result.streak });
+        else if (pick.timeLeftMs > config.timeLimitMs * 0.7) voice.line('fast');
+        else voice.line('correct');
+      } else voice.line(pick.chosen === null ? 'timeUp' : 'wrong');
       if (result.correct) {
         sound.correct();
         if (result.streak >= 3) sound.streak(result.streak);
@@ -92,6 +106,7 @@ async function playGame(config: GameConfig): Promise<'again' | 'setup'> {
   sound.setMusic('results');
   sound.fanfare();
   haptics.success();
+  setTimeout(() => voice.line('soloEnd', { score: session.score.toLocaleString() }), 1800);
   return ui.showResults(
     {
       score: session.score,
@@ -118,6 +133,8 @@ async function spinForRound(session: GameSession, host: PartyHost | null): Promi
   sound.setMusic('lobby');
   host?.broadcast({ t: 'screen', screen: 'wheel', text: final ? 'Final round! Double points!' : `Round ${session.currentRound}` });
   ui.showRoundBanner(session.currentRound, session.totalRounds, final);
+  if (final) voice.line('finalRound');
+  else if (session.currentRound > 1) voice.line('round', { n: session.currentRound });
   await ui.wait(900);
   await stage.wheel.spinTo(catId, (speed) => {
     sound.wheelTick(speed);
@@ -127,6 +144,7 @@ async function spinForRound(session: GameSession, host: PartyHost | null): Promi
   haptics.success();
   stage.setAccent(cat.color);
   host?.broadcast({ t: 'screen', screen: 'category', text: 'Get ready…', category: pub(cat) });
+  voice.line('category', { category: cat.name });
   await ui.showCategoryReveal(cat);
   return cat;
 }
@@ -163,11 +181,13 @@ async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<voi
       onHint: (teamId) => {
         if (!session.teams.some((t) => t.id === teamId) || !session.canUseHint(teamId)) return null;
         const hidden = session.useHint(teamId);
+        voice.line('hint');
         return { hidden, hintsLeft: session.team(teamId).hintsLeft };
       },
     };
     host.lobbyChanged();
     stage.wheel.build(config.categories.map(getCategory));
+    voice.line('intro');
 
     let qid = 0;
     while (session.hasNextRound()) {
@@ -197,6 +217,7 @@ async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<voi
           picture: !!q.picture,
         }));
 
+        voice.question(q.prompt, q.choices);
         const tv = party.tvQuestion(
           q,
           cat,
@@ -217,6 +238,8 @@ async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<voi
         host.closeQuestion();
         host.events.onVote = undefined;
 
+        const leaderBefore = session.standings()[0];
+        const leaderScoreBefore = leaderBefore.score;
         const results = session.submitAll(
           session.teams.map((t) => {
             const d = decideTeamAnswer(host.votesFor(t.id));
@@ -233,6 +256,12 @@ async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<voi
           ui.flash('rgba(255,40,60,0.4)');
         }
         const standings = session.standings();
+        const right = results.filter((r) => r.correct).length;
+        const newLeader = standings[0].id !== leaderBefore.id && standings[0].score > leaderScoreBefore && (standings[1]?.score ?? -1) < standings[0].score;
+        if (right === 0) voice.line('nobody');
+        else if (right === results.length && results.length > 1) voice.line('everyone');
+        else if (newLeader) voice.line('lead', { team: standings[0].name });
+        else voice.line('correct');
         const teamsPub = host.publicTeams();
         host.each((p) => {
           const r = results.find((x) => x.teamId === p.teamId);
@@ -263,6 +292,11 @@ async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<voi
     sound.setMusic('results');
     sound.fanfare();
     host.broadcast({ t: 'final', teams: host.publicTeams(), yourTeamId: null });
+    const top = session.standings();
+    setTimeout(() => {
+      if (top.length > 1 && top[0].score === top[1].score) voice.line('tie');
+      else voice.line('winner', { team: top[0].name });
+    }, 1500);
     const next = await party.tvFinal(session.standings(), host.mode === 'players');
     if (next === 'setup') {
       host.close();

@@ -6,6 +6,8 @@ export interface Settings {
   sound: boolean;
   music: boolean;
   haptics: boolean;
+  voice: boolean;
+  readQuestions: boolean;
   quality: Quality;
   lastCategories: CategoryId[] | null;
   rounds: number;
@@ -25,6 +27,8 @@ const DEFAULTS: Settings = {
   sound: true,
   music: true,
   haptics: true,
+  voice: true,
+  readQuestions: false,
   quality: 'auto',
   lastCategories: null,
   rounds: 3,
