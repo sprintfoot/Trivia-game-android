@@ -28,6 +28,8 @@ export type Picture =
   | { kind: 'tune'; id: string }
   | { kind: 'shadow'; emoji: string }
   | { kind: 'pixel'; emoji: string }
+  /** Famous faces: a free-licensed photo or painting that comes clearer over time. credit is shown once revealed. */
+  | { kind: 'photo'; id: string; credit: string }
   /** Who am I?: text clues about a famous person, hardest first, shown one at a time. */
   | { kind: 'clues'; icon: string; clues: string[] };
 

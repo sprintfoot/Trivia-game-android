@@ -3105,3 +3105,35 @@ body.going-home #stage {
   padding: 12px 8px;
   white-space: nowrap;
 }
+
+/* ---------- famous faces ---------- */
+.pic-photo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+}
+.pic-photo canvas {
+  height: min(30vh, 300px);
+  width: auto;
+  aspect-ratio: 300 / 360;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+}
+.pic-credit {
+  max-width: 100%;
+  font-size: 10px;
+  opacity: 0;
+  line-height: 1.2;
+  text-align: center;
+  transition: opacity 0.4s;
+}
+.pic-credit.on {
+  opacity: 0.65;
+}
+@media (orientation: portrait) {
+  .pic-photo canvas {
+    height: min(22vh, 240px);
+  }
+}
