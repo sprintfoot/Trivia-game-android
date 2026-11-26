@@ -537,6 +537,24 @@ export class Sound {
     if (step >= 60) this.noise({ dur: 0.08, vol: 0.14, filter: 'bandpass', freq: 1200 + (step - 60) * 300, q: 0.9, at: t, bus });
   }
 
+  /** A wet tomato splat. */
+  splat(): void {
+    const t = this.now;
+    this.noise({ dur: 0.25, vol: 0.5, filter: 'lowpass', freq: 1800, to: 300, at: t });
+    this.noise({ dur: 0.12, vol: 0.3, filter: 'bandpass', freq: 600, q: 2, at: t + 0.02 });
+    this.tone({ freq: 220, to: 70, type: 'sine', dur: 0.2, vol: 0.35, at: t });
+    for (let i = 0; i < 4; i++) this.tone({ freq: 900 + Math.random() * 900, to: 300, type: 'sine', dur: 0.06, vol: 0.06, at: t + 0.08 + i * 0.05 });
+  }
+
+  /** A cartoon bonk on the head, with a little dizzy twinkle. */
+  bonk(): void {
+    const t = this.now;
+    this.tone({ freq: 520, to: 180, type: 'square', dur: 0.12, vol: 0.18, filter: 1600, at: t });
+    this.tone({ freq: 160, to: 60, type: 'sine', dur: 0.18, vol: 0.5, at: t });
+    this.noise({ dur: 0.05, vol: 0.25, filter: 'bandpass', freq: 2500, q: 3, at: t });
+    [1568, 1976, 2349].forEach((f, i) => this.tone({ freq: f, type: 'triangle', dur: 0.12, vol: 0.05, at: t + 0.18 + i * 0.08 }));
+  }
+
   /** A short "here we go!" fanfare for the start of a game. */
   introStinger(): void {
     if (!this.ctx) return;

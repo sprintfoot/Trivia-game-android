@@ -9,15 +9,22 @@ import { haptics } from './audio/haptics';
 import { esc, mount, press } from './ui/ui';
 import type { Settings } from './settings';
 import { saveSettings } from './settings';
+import { AVATARS, avatarSvg, randomAvatar } from './game/avatars';
+import { avatarHtml, react, wrongReaction } from './ui/avatarFx';
 
 const LETTERS = ['A', 'B', 'C', 'D'];
 
-export function joinForm(settings: Settings, presetCode = ''): Promise<{ code: string; name: string } | null> {
+export function joinForm(settings: Settings, presetCode = ''): Promise<{ code: string; name: string; avatar: string } | null> {
+  let avatar = AVATARS.some((a) => a.id === settings.avatar) ? settings.avatar : randomAvatar();
   const el = mount(
     `<header class="bar"><h2>Join a game</h2></header>
      <form class="join-form" autocomplete="off">
        <label>Room code<input name="code" maxlength="4" inputmode="text" autocapitalize="characters" spellcheck="false" value="${esc(presetCode)}" placeholder="ABCD" required /></label>
        <label>Your name<input name="name" maxlength="16" value="${esc(settings.playerName)}" placeholder="Name" required /></label>
+       <div class="avatar-pick-label">Pick your character</div>
+       <div class="avatar-pick">${AVATARS.map(
+         (a) => `<button type="button" class="avatar-opt ${a.id === avatar ? 'on' : ''}" data-avatar="${a.id}" aria-label="${a.name}">${avatarSvg(a.id, 'happy')}</button>`,
+       ).join('')}</div>
        <p class="hint">The room code is on the TV.</p>
        <p class="error" data-err></p>
        <button class="btn primary big" type="submit">JOIN</button>
@@ -28,6 +35,14 @@ export function joinForm(settings: Settings, presetCode = ''): Promise<{ code: s
   const form = el.querySelector('form')!;
   const codeIn = form.elements.namedItem('code') as HTMLInputElement;
   const nameIn = form.elements.namedItem('name') as HTMLInputElement;
+  el.querySelectorAll<HTMLElement>('[data-avatar]').forEach((b) =>
+    b.addEventListener('click', () => {
+      avatar = b.dataset.avatar!;
+      el.querySelectorAll('.avatar-opt').forEach((x) => x.classList.toggle('on', x === b));
+      sound.pop(Math.floor(Math.random() * 4));
+      haptics.tap();
+    }),
+  );
   codeIn.addEventListener('input', () => (codeIn.value = codeIn.value.toUpperCase().replace(/[^A-Z]/g, '')));
   requestAnimationFrame(() => (presetCode ? nameIn : codeIn).focus());
 
@@ -42,8 +57,9 @@ export function joinForm(settings: Settings, presetCode = ''): Promise<{ code: s
       }
       sound.click();
       settings.playerName = name;
+      settings.avatar = avatar;
       saveSettings(settings);
-      resolve({ code, name });
+      resolve({ code, name, avatar });
     });
     press(el.querySelector('[data-back]')!, () => resolve(null));
   });
@@ -165,14 +181,30 @@ export class Controller {
            <span class="ctl-timer" data-timer></span>
          </div>
          <div class="ctl-prompt">${esc(m.prompt)}${m.media === 'tune' ? '<span class="ctl-look">🎧 Listen to the TV, a tune is playing!</span>' : m.media === 'picture' ? '<span class="ctl-look">👀 Watch the TV, the picture is being uncovered!</span>' : ''}</div>
-         <div class="ctl-answers">${m.choices
-           .map(
-             (c, i) =>
-               `<button class="ctl-ans" data-i="${i}"><span class="letter">${LETTERS[i]}</span><span class="txt">${esc(c)}</span><span class="voters"></span></button>`,
-           )
-           .join('')}</div>
+         ${
+           m.typed
+             ? `<form class="ctl-type" autocomplete="off">
+                  <input name="guess" maxlength="40" placeholder="Type your answer" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="send" />
+                  <button class="btn primary" type="submit">SEND</button>
+                </form>
+                <div class="ctl-guesses" data-guesses></div>`
+             : `<div class="ctl-answers">${m.choices
+                 .map(
+                   (c, i) =>
+                     `<button class="ctl-ans" data-i="${i}"><span class="letter">${LETTERS[i]}</span><span class="txt">${esc(c)}</span><span class="voters"></span></button>`,
+                 )
+                 .join('')}</div>`
+         }
          ${m.hintsLeft > 0 ? `<button class="hint-btn" data-hint>💡 50/50 <span>${m.hintsLeft} left</span></button>` : ''}
-         <p class="ctl-sub" data-note>${m.teamSize > 1 ? 'Vote with your team. The most popular answer counts.' : 'Tap your answer.'}</p>
+         <p class="ctl-sub" data-note>${
+           m.typed
+             ? m.teamSize > 1
+               ? 'Everyone types a guess. If most of your team gets it right, your team scores.'
+               : 'Type your answer and send it. Small typos are OK.'
+             : m.teamSize > 1
+               ? 'Vote with your team. The most popular answer counts.'
+               : 'Tap your answer.'
+         }</p>
        </div>`,
       'ctl-screen',
     );
@@ -188,6 +220,18 @@ export class Controller {
         this.client.send({ t: 'vote', qid: m.qid, choice: i });
       }),
     );
+    const typeForm = el.querySelector<HTMLFormElement>('.ctl-type');
+    typeForm?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const input = typeForm.querySelector('input')!;
+      const text = input.value.trim();
+      if (!text || input.disabled) return;
+      sound.lockIn();
+      haptics.heavy();
+      this.client.send({ t: 'guess', qid: m.qid, text });
+      input.value = '';
+      input.placeholder = `Sent: ${text} (send again to change)`;
+    });
     if (m.hidden.length) this.applyHint(m.hidden, m.hintsLeft);
     el.querySelector('[data-hint]')?.addEventListener('click', (e) => {
       (e.currentTarget as HTMLButtonElement).disabled = true;
@@ -204,7 +248,7 @@ export class Controller {
       timer.textContent = `${left}s`;
       timer.classList.toggle('danger', left <= 5);
       if (left > 0) requestAnimationFrame(tick);
-      else el.querySelectorAll<HTMLButtonElement>('.ctl-ans').forEach((b) => (b.disabled = true));
+      else el.querySelectorAll<HTMLButtonElement | HTMLInputElement>('.ctl-ans, .ctl-type input, .ctl-type button').forEach((b) => (b.disabled = true));
     };
     tick();
   }
@@ -225,7 +269,14 @@ export class Controller {
     }
   }
 
-  private showVotes(votes: { playerId: string; name: string; choice: number }[], decided: boolean): void {
+  private showVotes(votes: { playerId: string; name: string; choice: number; text?: string }[], decided: boolean): void {
+    const guesses = document.querySelector('[data-guesses]');
+    if (guesses) {
+      guesses.innerHTML = votes
+        .filter((v) => v.text)
+        .map((v) => `<span><b>${esc(v.playerId === this.playerId ? 'You' : v.name)}:</b> ${esc(v.text!)}</span>`)
+        .join('');
+    }
     document.querySelectorAll<HTMLElement>('.ctl-ans').forEach((b) => {
       const i = Number(b.dataset.i);
       b.querySelector('.voters')!.innerHTML = votes
@@ -246,14 +297,18 @@ export class Controller {
       sound.wrong();
       haptics.error();
     }
-    mount(
+    const me = m.teams.flatMap((t) => t.members).find((x) => x.id === this.playerId);
+    const el = mount(
       `<div class="ctl ctl-reveal ${m.correct ? 'good' : 'bad'}">
+         ${me ? `<div class="ctl-avatar">${avatarHtml(me.avatar)}</div>` : ''}
          <div class="ctl-big">${m.correct ? 'CORRECT!' : m.chosen === null ? "TIME'S UP" : 'WRONG'}</div>
          ${m.correct ? `<div class="v-points">+${m.points.toLocaleString()}</div>` : `<p class="ctl-sub">It was <b>${esc(m.answerText)}</b></p>`}
          <div class="ctl-badge" style="--c:${team?.color ?? '#fff'}">${esc(team?.name ?? '')} · ${(team?.score ?? 0).toLocaleString()} · ${ordinal(m.rank)} place</div>
        </div>`,
       'ctl-screen',
     );
+    const av = el.querySelector<HTMLElement>('.ctl-avatar .av');
+    if (av) react(av, m.correct ? 'cheer' : wrongReaction(), 150);
   }
 
   private final(teams: PublicTeam[]): void {

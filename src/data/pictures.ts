@@ -1,7 +1,7 @@
 /**
  * Picture-reveal questions. Pictures are never copyrighted stills or logos:
  * country flags (drawings from the MIT-licensed flag-icons project), emoji puzzles,
- * and zoomed-in emoji, all drawn on the device.
+ * zoomed-in emoji, emoji silhouettes and pixelated emoji, all drawn on the device.
  */
 import type { AgeGroup, BankQuestion } from '../game/session';
 import { mulberry32, shuffle } from '../game/session';
@@ -79,6 +79,50 @@ const ZOOM_ANIMALS: [string, string, string[], Age][] = [
   ['🦨', 'Skunk', ['Raccoon', 'Badger', 'Squirrel'], T],
 ];
 
+// Silhouettes that slowly fill in with color. [emoji, answer, wrong answers, age]
+const SHADOWS: [string, string, string[], Age][] = [
+  ['🍌', 'Banana', ['Cucumber', 'Pepper', 'Corn'], K],
+  ['🍍', 'Pineapple', ['Coconut', 'Mango', 'Artichoke'], K],
+  ['🎸', 'Guitar', ['Violin', 'Banjo', 'Cello'], K],
+  ['🚁', 'Helicopter', ['Airplane', 'Drone', 'Rocket'], K],
+  ['🦕', 'Dinosaur', ['Dragon', 'Crocodile', 'Lizard'], K],
+  ['☂️', 'Umbrella', ['Lamp', 'Mushroom', 'Parasol tree'], K],
+  ['🐇', 'Rabbit', ['Cat', 'Kangaroo', 'Squirrel'], K],
+  ['🚲', 'Bicycle', ['Motorbike', 'Scooter', 'Wheelchair'], K],
+  ['🦀', 'Crab', ['Spider', 'Lobster', 'Scorpion'], K],
+  ['🎺', 'Trumpet', ['Saxophone', 'Trombone', 'Flute'], T],
+  ['🦔', 'Hedgehog', ['Porcupine', 'Mouse', 'Mole'], T],
+  ['⚓', 'Anchor', ['Hook', 'Trident', 'Key'], T],
+  ['🔭', 'Telescope', ['Microscope', 'Cannon', 'Camera'], T],
+  ['🦥', 'Sloth', ['Koala', 'Monkey', 'Bear'], T],
+  ['🪁', 'Kite', ['Sail', 'Flag', 'Umbrella'], T],
+  ['🗿', 'Moai statue', ['Totem pole', 'Sphinx', 'Gargoyle'], A],
+  ['🦚', 'Peacock', ['Turkey', 'Pheasant', 'Rooster'], A],
+  ['🪗', 'Accordion', ['Harmonica', 'Bagpipes', 'Piano'], A],
+];
+
+// Pictures that start as a few big pixels and sharpen. [emoji, answer, wrong answers, age]
+const PIXELS: [string, string, string[], Age][] = [
+  ['🍕', 'Pizza', ['Pie', 'Taco', 'Cheese'], K],
+  ['🐸', 'Frog', ['Turtle', 'Lizard', 'Snake'], K],
+  ['🌈', 'Rainbow', ['Sunset', 'Bridge', 'Fireworks'], K],
+  ['🍩', 'Doughnut', ['Bagel', 'Cookie', 'Tire'], K],
+  ['🚀', 'Rocket', ['Airplane', 'Lighthouse', 'Pencil'], K],
+  ['🐙', 'Octopus', ['Jellyfish', 'Spider', 'Squid'], K],
+  ['🎂', 'Birthday cake', ['Hat', 'Present', 'Candle'], K],
+  ['🦄', 'Unicorn', ['Horse', 'Dragon', 'Llama'], K],
+  ['🍉', 'Watermelon', ['Pumpkin', 'Tomato', 'Apple'], K],
+  ['🗽', 'Statue of Liberty', ['Big Ben', 'Eiffel Tower', 'Christ the Redeemer'], T],
+  ['🌋', 'Volcano', ['Mountain', 'Pyramid', 'Campfire'], T],
+  ['🎡', 'Ferris wheel', ['Clock', 'Roller coaster', 'Bicycle wheel'], T],
+  ['🏰', 'Castle', ['Church', 'Lighthouse', 'Palace gate'], T],
+  ['🥨', 'Pretzel', ['Croissant', 'Knot', 'Bread roll'], T],
+  ['🪐', 'Saturn', ['Jupiter', 'The Moon', 'A donut'], T],
+  ['🦞', 'Lobster', ['Crab', 'Shrimp', 'Scorpion'], T],
+  ['🧭', 'Compass', ['Clock', 'Stopwatch', 'Coin'], A],
+  ['🏯', 'Japanese castle', ['Pagoda', 'Temple', 'Lighthouse'], A],
+];
+
 export function buildPictureQuestions(): BankQuestion[] {
   const rng = mulberry32(77);
   const out: BankQuestion[] = [];
@@ -103,5 +147,11 @@ export function buildPictureQuestions(): BankQuestion[] {
     const y = 0.2 + rng() * 0.6;
     add({ id: `zoom-${i + 1}`, category: 'pictures', age, prompt: 'Zooming out… what animal is this?', picture: { kind: 'zoom', emoji, x, y }, right, wrong });
   });
+  SHADOWS.forEach(([emoji, right, wrong, age], i) =>
+    add({ id: `shadow-${i + 1}`, category: 'pictures', age, prompt: 'Whose shadow is this?', picture: { kind: 'shadow', emoji }, right, wrong }),
+  );
+  PIXELS.forEach(([emoji, right, wrong, age], i) =>
+    add({ id: `pixel-${i + 1}`, category: 'pictures', age, prompt: "What's hiding in the pixels?", picture: { kind: 'pixel', emoji }, right, wrong }),
+  );
   return out;
 }

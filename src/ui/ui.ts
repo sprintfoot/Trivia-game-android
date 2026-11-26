@@ -5,6 +5,8 @@ import { sound } from '../audio/sound';
 import { pictureHtml, startReveal } from './picture';
 import { haptics } from '../audio/haptics';
 import logoMarkUrl from '../assets/logo-mark.svg?url';
+import { isMatch } from '../game/match';
+import { avatarHtml, react, wrongReaction } from './avatarFx';
 
 const root = document.getElementById('ui')!;
 const flashEl = document.getElementById('flash')!;
@@ -277,6 +279,28 @@ export interface Hud {
 export interface AnswerPick {
   chosen: number | null;
   timeLeftMs: number;
+  /** What the player typed, for fill-in-the-blank questions. */
+  typed?: string;
+}
+
+/** The answer area for a fill-in-the-blank question: a box to type in. */
+export function typeAnswerHtml(placeholder = 'Type your answer'): string {
+  return `<div class="answers type-answers">
+    <div class="ans type-answer" data-i="0"><span class="letter">✏️</span><span class="txt" data-typed>Fill in the blank!</span></div>
+    <form class="type-form" autocomplete="off">
+      <input name="guess" maxlength="40" placeholder="${placeholder}" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="send" data-focus />
+      <button class="btn primary" type="submit">GO</button>
+    </form>
+  </div>`;
+}
+
+/** Shows the right answer in a fill-in-the-blank answer card. */
+export function revealTyped(el: HTMLElement, answer: string, typed?: string, correct?: boolean): void {
+  const card = el.querySelector<HTMLElement>('.type-answer');
+  if (!card) return;
+  card.querySelector('[data-typed]')!.textContent = answer;
+  el.querySelector('.type-form')?.remove();
+  if (typed && !correct) card.insertAdjacentHTML('afterend', `<div class="typed-note">You typed “${esc(typed)}”</div>`);
 }
 
 const LETTERS = ['A', 'B', 'C', 'D'];
@@ -306,13 +330,17 @@ export function askQuestion(q: LiveQuestion, cat: Category, timeLimitMs: number,
          <circle class="prog" cx="50" cy="50" r="44" stroke-dasharray="${RING}" stroke-dashoffset="0"/></svg>
          <span class="secs" data-secs>${Math.ceil(timeLimitMs / 1000)}</span></div>
        <div class="q-card ${q.picture ? 'has-pic' : ''}"><div class="q-cat">${cat.icon} ${esc(cat.name)}</div><div class="q-text">${esc(q.prompt)}</div>${q.picture ? pictureHtml(q.picture) : ''}</div>
-       ${hooks.hintsLeft > 0 ? `<button class="hint-btn" data-hint>💡 50/50 <span>${hooks.hintsLeft} left</span></button>` : ''}
-       <div class="answers">${q.choices
-         .map(
-           (c, i) =>
-             `<button class="ans" data-i="${i}" ${i === 0 ? 'data-focus' : ''} style="--d:${i * 70}ms"><span class="letter">${LETTERS[i]}</span><span class="txt">${esc(c)}</span></button>`,
-         )
-         .join('')}</div>
+       ${hooks.hintsLeft > 0 && !q.accept ? `<button class="hint-btn" data-hint>💡 50/50 <span>${hooks.hintsLeft} left</span></button>` : ''}
+       ${
+         q.accept
+           ? typeAnswerHtml()
+           : `<div class="answers">${q.choices
+               .map(
+                 (c, i) =>
+                   `<button class="ans" data-i="${i}" ${i === 0 ? 'data-focus' : ''} style="--d:${i * 70}ms"><span class="letter">${LETTERS[i]}</span><span class="txt">${esc(c)}</span></button>`,
+               )
+               .join('')}</div>`
+       }
      </div>`,
     'question',
   );
@@ -327,6 +355,7 @@ export function askQuestion(q: LiveQuestion, cat: Category, timeLimitMs: number,
     let done = false;
     let lastSec = Math.ceil(timeLimitMs / 1000);
 
+    let typed: string | undefined;
     const finish = (chosen: number | null) => {
       if (done) return;
       done = true;
@@ -335,9 +364,10 @@ export function askQuestion(q: LiveQuestion, cat: Category, timeLimitMs: number,
       hintBtn?.setAttribute('disabled', '');
       const left = Math.max(0, timeLimitMs - (performance.now() - start));
       el.querySelectorAll<HTMLButtonElement>('.ans').forEach((b) => (b.disabled = true));
-      if (chosen !== null) el.querySelector(`[data-i="${chosen}"]`)!.classList.add('picked');
+      if (chosen !== null && !q.accept) el.querySelector(`[data-i="${chosen}"]`)?.classList.add('picked');
+      el.querySelectorAll<HTMLInputElement>('.type-form input, .type-form button').forEach((b) => (b.disabled = true));
       hooks.onTension(0);
-      resolve({ chosen, timeLeftMs: chosen === null ? 0 : left });
+      resolve({ chosen, timeLeftMs: chosen === null ? 0 : left, typed });
     };
 
     const pick = (i: number) => {
@@ -347,7 +377,18 @@ export function askQuestion(q: LiveQuestion, cat: Category, timeLimitMs: number,
       haptics.heavy();
       finish(i);
     };
-    el.querySelectorAll<HTMLButtonElement>('.ans').forEach((b) => b.addEventListener('click', () => pick(Number(b.dataset.i))));
+    el.querySelectorAll<HTMLButtonElement>('button.ans').forEach((b) => b.addEventListener('click', () => pick(Number(b.dataset.i))));
+    const typeForm = el.querySelector<HTMLFormElement>('.type-form');
+    typeForm?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const input = typeForm.querySelector('input')!;
+      if (done || !input.value.trim() || !q.accept) return;
+      typed = input.value.trim();
+      input.blur();
+      sound.lockIn();
+      haptics.heavy();
+      finish(isMatch(typed, q.accept) ? 0 : 1);
+    });
 
     const hintBtn = el.querySelector<HTMLButtonElement>('[data-hint]');
     const hint = () => {
@@ -367,6 +408,7 @@ export function askQuestion(q: LiveQuestion, cat: Category, timeLimitMs: number,
     const onKey = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase();
       const idx = '1234'.indexOf(k) >= 0 ? '1234'.indexOf(k) : 'abcd'.indexOf(k);
+      if (q.accept) return;
       if (idx >= 0 && idx < q.choices.length) pick(idx);
       else if (k === 'h') hint();
     };
@@ -400,11 +442,12 @@ export function askQuestion(q: LiveQuestion, cat: Category, timeLimitMs: number,
   });
 }
 
-export async function showReveal(result: AnswerResult, prevScore: number, onPoints: () => void): Promise<void> {
+export async function showReveal(result: AnswerResult, prevScore: number, onPoints: () => void, typedLast?: string, avatar?: string): Promise<void> {
   const el = root.querySelector('.question') as HTMLElement;
   const buttons = el.querySelectorAll<HTMLElement>('.ans');
   buttons[result.question.answer].classList.add('correct');
-  if (result.chosen !== null && !result.correct) buttons[result.chosen].classList.add('wrong');
+  if (result.question.accept) revealTyped(el, result.question.choices[result.question.answer], typedLast, result.correct);
+  else if (result.chosen !== null && !result.correct) buttons[result.chosen]?.classList.add('wrong');
   buttons.forEach((b, i) => {
     if (i !== result.question.answer && i !== result.chosen) b.classList.add('dim');
   });
@@ -421,9 +464,11 @@ export async function showReveal(result: AnswerResult, prevScore: number, onPoin
   }
   const pop = document.createElement('div');
   pop.className = `verdict ${result.correct ? 'good' : 'bad'}`;
-  pop.innerHTML = `<div class="v-label">${label}</div>
+  pop.innerHTML = `${avatar ? `<div class="v-avatar">${avatarHtml(avatar)}</div>` : ''}<div class="v-label">${label}</div>
     ${result.correct ? `<div class="v-points">+${s.total.toLocaleString()}</div><div class="v-parts">${parts.join('')}</div>` : ''}`;
   el.appendChild(pop);
+  const av = pop.querySelector<HTMLElement>('.v-avatar .av');
+  if (av) react(av, result.correct ? 'cheer' : wrongReaction(), 100);
 
   const streakEl = el.querySelector<HTMLElement>('[data-streak]')!;
   streakEl.textContent = `🔥 ${result.streak}`;

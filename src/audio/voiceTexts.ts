@@ -15,8 +15,10 @@ export function render(template: string, vars: Record<string, string | number>):
   return template.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? ''));
 }
 
+/** What the host says to read a question. Fill-in-the-blank questions pass no choices. */
 export function questionSpeech(prompt: string, choices: readonly string[]): string {
-  return `${prompt} ${choices.map((c, i) => `${'ABCD'[i]}: ${c}.`).join(' ')}`;
+  const said = prompt.replace(/_{2,}/g, 'blank');
+  return choices.length ? `${said} ${choices.map((c, i) => `${'ABCD'[i]}: ${c}.`).join(' ')}` : said;
 }
 
 /** Every way the given line can come out, for every name and number the game uses. */
@@ -46,6 +48,6 @@ export function clipId(text: string): string {
 export function allVoiceTexts(): string[] {
   const texts = new Set<string>();
   for (const key of Object.keys(LINES) as LineKey[]) lineVariants(key).forEach((t) => texts.add(t));
-  for (const q of BANK) if (q.picture?.kind !== 'tune') texts.add(questionSpeech(q.prompt, q.choices));
+  for (const q of BANK) if (q.picture?.kind !== 'tune') texts.add(questionSpeech(q.prompt, q.accept ? [] : q.choices));
   return [...texts];
 }
