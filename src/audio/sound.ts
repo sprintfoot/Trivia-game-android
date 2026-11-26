@@ -30,7 +30,7 @@ interface NoiseOpts {
   bus?: GainNode;
 }
 
-export type MusicMode = 'off' | 'lobby' | 'question' | 'results';
+export type MusicMode = 'off' | 'intro' | 'lobby' | 'question' | 'results';
 
 const midi = (n: number) => 440 * Math.pow(2, (n - 69) / 12);
 
@@ -42,6 +42,21 @@ const PROGRESSION = [
   { root: 43, chord: [55, 59, 62] },
 ];
 const ARP = [0, 1, 2, 1, 0, 2, 1, 2];
+
+// The intro theme (original): C - Am - F - G with a bright synth-brass hook.
+const INTRO_PROGRESSION = [
+  { root: 36, chord: [60, 64, 67] },
+  { root: 45, chord: [60, 64, 69] },
+  { root: 41, chord: [60, 65, 69] },
+  { root: 43, chord: [59, 62, 67] },
+];
+// [step in the 64-step loop, MIDI note, length in 16ths]
+const INTRO_HOOK: [number, number, number][] = [
+  [0, 67, 2], [2, 72, 2], [4, 76, 2], [6, 79, 4], [10, 76, 2], [12, 79, 4],
+  [16, 81, 3], [19, 79, 1], [20, 76, 2], [22, 72, 2], [24, 76, 6],
+  [32, 77, 2], [34, 81, 2], [36, 84, 4], [40, 81, 2], [42, 77, 2], [44, 81, 4],
+  [48, 79, 2], [50, 83, 2], [52, 86, 3], [55, 83, 1], [56, 79, 2], [58, 74, 2], [60, 79, 4],
+];
 
 export class Sound {
   enabled = true;
@@ -243,6 +258,29 @@ export class Sound {
       for (const o of oscs) {
         try { o.stop(now + 0.15); } catch { /* already stopped */ }
       }
+    };
+  }
+
+  /** Decodes a recorded clip (needs unlock() first). */
+  async decode(data: ArrayBuffer): Promise<AudioBuffer | null> {
+    if (!this.ctx) return null;
+    return this.ctx.decodeAudioData(data);
+  }
+
+  /** Plays the host's recorded voice over everything, dipping the music underneath. */
+  playVoice(buf: AudioBuffer, vol = 1): () => void {
+    const ctx = this.ctx;
+    if (!ctx) return () => {};
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const g = ctx.createGain();
+    g.gain.value = vol;
+    src.connect(g).connect(this.master);
+    src.start();
+    this.duck(0.3, buf.duration + 0.2);
+    return () => {
+      g.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.04);
+      try { src.stop(ctx.currentTime + 0.2); } catch { /* already stopped */ }
     };
   }
 
@@ -452,6 +490,8 @@ export class Sound {
 
   private get bpm(): number {
     switch (this.musicMode) {
+      case 'intro':
+        return 128;
       case 'lobby':
         return 100;
       case 'results':
@@ -470,7 +510,55 @@ export class Sound {
     }
   }
 
+  private playIntroStep(step: number, t: number): void {
+    const bus = this.musicBus;
+    const { root, chord } = INTRO_PROGRESSION[Math.floor(step / 16) % 4];
+    const s = step % 16;
+    const sixteenth = 60 / this.bpm / 4;
+    // The hook.
+    for (const [at, n, len] of INTRO_HOOK) {
+      if (at !== step) continue;
+      const dur = len * sixteenth * 0.95;
+      this.tone({ freq: midi(n), type: 'sawtooth', dur, vol: 0.08, attack: 0.01, filter: 2600, at: t, bus });
+      this.tone({ freq: midi(n), type: 'square', dur, vol: 0.04, detune: 8, filter: 1800, at: t, bus });
+      this.tone({ freq: midi(n - 12), type: 'triangle', dur, vol: 0.05, at: t, bus });
+    }
+    // Bass: root on 8ths with a pickup.
+    if (s % 2 === 0 || s === 15) {
+      const n = s === 15 ? root + 7 : s % 8 === 6 ? root + 12 : root;
+      this.tone({ freq: midi(n), type: 'sawtooth', dur: 0.16, vol: 0.2, filter: 700, at: t, bus });
+    }
+    // Chord stabs on the off-beats.
+    if (s % 4 === 2) chord.forEach((n) => this.tone({ freq: midi(n), type: 'square', dur: 0.09, vol: 0.035, filter: 2200, at: t, bus }));
+    // Drums: kick on quarters, snare on 2 and 4, 8th hats, a fill at the end of the loop.
+    if (s % 4 === 0) this.tone({ freq: 150, to: 45, type: 'sine', dur: 0.22, vol: 0.55, at: t, bus });
+    if (s === 4 || s === 12) this.noise({ dur: 0.14, vol: 0.22, filter: 'bandpass', freq: 1800, q: 0.7, at: t, bus });
+    if (s % 2 === 0) this.noise({ dur: 0.035, vol: 0.1, filter: 'highpass', freq: 8000, at: t, bus });
+    if (step >= 60) this.noise({ dur: 0.08, vol: 0.14, filter: 'bandpass', freq: 1200 + (step - 60) * 300, q: 0.9, at: t, bus });
+  }
+
+  /** A short "here we go!" fanfare for the start of a game. */
+  introStinger(): void {
+    if (!this.ctx) return;
+    const t = this.now + 0.02;
+    const notes: [number, number, number][] = [[0, 67, 0.12], [0.14, 72, 0.12], [0.28, 76, 0.12], [0.42, 79, 0.7]];
+    for (const [dt, n, dur] of notes) {
+      for (const shift of [0, 4, 7]) {
+        if (dt < 0.4 && shift) continue;
+        this.tone({ freq: midi(n + shift), type: 'sawtooth', dur, vol: 0.09, filter: 3000, at: t + dt });
+      }
+      this.tone({ freq: midi(n - 24), type: 'triangle', dur, vol: 0.15, at: t + dt });
+    }
+    this.noise({ dur: 0.9, vol: 0.18, filter: 'highpass', freq: 5000, at: t + 0.42 });
+    this.tone({ freq: 160, to: 40, type: 'sine', dur: 0.3, vol: 0.6, at: t + 0.42 });
+    this.duck(0.15, 1.2);
+  }
+
   private playStep(step: number, t: number): void {
+    if (this.musicMode === 'intro') {
+      this.playIntroStep(step, t);
+      return;
+    }
     const bar = Math.floor(step / 16) % PROGRESSION.length;
     const { root, chord } = PROGRESSION[bar];
     const s = step % 16;

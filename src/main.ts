@@ -35,6 +35,7 @@ const openSettings = () => ui.openSettings(settings, applySettings);
 async function playGame(config: GameConfig): Promise<'again' | 'setup'> {
   const session = new GameSession(config, BANK);
   stage.wheel.build(config.categories.map(getCategory));
+  sound.introStinger();
   voice.line('intro');
 
   while (session.hasNextRound()) {
@@ -164,7 +165,7 @@ async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<voi
     stage.setMode('idle');
     stage.setAccent('#38e1ff');
     sound.setMusic('lobby');
-    const lobby = party.showLobby(host);
+    const lobby = party.showLobby(host, settings.playerName?.trim() || 'Host');
     host.events = { onLobby: lobby.refresh };
     host.lobbyChanged();
     if ((await lobby.started) === 'back') {
@@ -177,16 +178,20 @@ async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<voi
     host.teams = host.activeTeams();
     const session = new GameSession(config, BANK, Math.random, host.teams);
     host.bindScores(() => session.teams);
+    let tvNow: ReturnType<typeof party.tvQuestion> | null = null;
     host.events = {
       onHint: (teamId) => {
         if (!session.teams.some((t) => t.id === teamId) || !session.canUseHint(teamId)) return null;
         const hidden = session.useHint(teamId);
         voice.line('hint');
+        // A teammate's hint also clears answers on the host's screen when the host is playing.
+        if (host.localPlayer?.teamId === teamId) tvNow?.hide(hidden);
         return { hidden, hintsLeft: session.team(teamId).hintsLeft };
       },
     };
     host.lobbyChanged();
     stage.wheel.build(config.categories.map(getCategory));
+    sound.introStinger();
     voice.line('intro');
 
     let qid = 0;
@@ -218,6 +223,8 @@ async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<voi
         }));
 
         if (q.picture?.kind !== 'tune') voice.question(q.prompt, q.choices);
+        const me = host.localPlayer;
+        const myTeam = me?.teamId && session.teams.some((t) => t.id === me.teamId) ? me.teamId : null;
         const tv = party.tvQuestion(
           q,
           cat,
@@ -231,8 +238,19 @@ async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<voi
             },
             onTick: (u) => sound.clockTick(u),
             allAnswered: () => host.allVoted(),
+            local:
+              me && myTeam
+                ? {
+                    name: me.name,
+                    hintsLeft: session.team(myTeam).hintsLeft,
+                    onPick: (i) => host.localVote(i),
+                    onHint: () => host.localHint()?.hidden ?? null,
+                  }
+                : undefined,
           },
         );
+        tvNow = tv;
+        if (myTeam) tv.hide(session.hiddenFor(myTeam));
         host.events.onVote = (teamId) => tv.setLocked(teamId, host.teamDecided(teamId));
         await tv.done;
         host.closeQuestion();
@@ -346,9 +364,15 @@ async function main(): Promise<void> {
 
   stage.wheel.build(CATEGORIES);
   stage.setMode('idle');
+  // Browsers only allow sound after a tap or key press; the Android app allows it straight away.
+  const wake = () => sound.unlock();
+  document.addEventListener('pointerdown', wake, { once: true });
+  document.addEventListener('keydown', wake, { once: true });
+  sound.unlock();
   for (;;) {
     stage.setMode('idle');
     stage.setAccent('#38e1ff');
+    sound.setMusic('intro');
     const choice = await ui.showTitle(openSettings);
     sound.unlock();
     applySettings(settings);
@@ -359,7 +383,6 @@ async function main(): Promise<void> {
       await joinParty();
       continue;
     }
-    sound.setMusic('lobby');
     const config = await ui.showSetup(settings, openSettings, choice === 'host');
     saveSettings(settings);
     if (choice === 'host') {
@@ -372,7 +395,7 @@ async function main(): Promise<void> {
       if (next === 'setup') {
         stage.setMode('idle');
         stage.setAccent('#38e1ff');
-        sound.setMusic('lobby');
+        sound.setMusic('intro');
         solo = await ui.showSetup(settings, openSettings);
         saveSettings(settings);
       }

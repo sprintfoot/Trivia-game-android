@@ -4,6 +4,7 @@ import type { Settings } from '../settings';
 import { sound } from '../audio/sound';
 import { pictureHtml, startReveal } from './picture';
 import { haptics } from '../audio/haptics';
+import logoMarkUrl from '../assets/logo-mark.svg?url';
 
 const root = document.getElementById('ui')!;
 const flashEl = document.getElementById('flash')!;
@@ -70,8 +71,11 @@ export type TitleChoice = 'solo' | 'host' | 'join';
 export function showTitle(onSettings: () => void): Promise<TitleChoice> {
   const el = mount(
     `<div class="title-wrap">
-       <div class="logo"><span class="l1">TRIVIA</span><span class="l2">PARTY</span></div>
-       <p class="tagline">Spin. Answer. Brag.</p>
+       <div class="brand">
+         <img class="logo-mark" src="${logoMarkUrl}" alt="" draggable="false"/>
+         <div class="logo"><span class="l1">TRIVIA</span><span class="l2">PARTY</span></div>
+         <p class="tagline">Spin. Answer. Brag.</p>
+       </div>
        <div class="title-actions">
          <button class="btn primary big" data-choice="host" data-focus>HOST A PARTY</button>
          <div class="title-row">
@@ -146,7 +150,8 @@ export function showSetup(settings: Settings, onSettings: () => void, party = fa
 
   const el = mount(
     `<header class="bar"><h2>Game setup</h2><button class="icon-btn" aria-label="Settings" data-settings>⚙️</button></header>
-     <div class="scroll">
+     <div class="scroll setup-cols">
+      <div class="setup-col">
        ${party ? `<h3>Play as</h3>${segmented('teams', TEAM_OPTIONS, vals.teams, (o) => (o === 0 ? 'Solo players' : `${o} teams`))}` : ''}
        <h3>Categories <span class="count" data-count></span><button class="link" data-all>All</button></h3>
        <div class="chips">${CATEGORIES.map(
@@ -154,12 +159,15 @@ export function showSetup(settings: Settings, onSettings: () => void, party = fa
            `<button class="chip ${chosen.has(c.id) ? 'on' : ''}" data-cat="${c.id}" style="--c:${c.color}">
               <span class="ico">${c.icon}</span>${esc(c.name)}</button>`,
        ).join('')}</div>
+      </div>
+      <div class="setup-col">
        <h3>Most players are</h3>${segmented('age', AGE_GROUPS.map((a) => a.id), vals.age, ageLabel)}
        <h3>Rounds</h3>${segmented('rounds', ROUND_OPTIONS, vals.rounds)}
        <h3>Questions per round</h3>${segmented('qpr', QPR_OPTIONS, vals.qpr)}
        <h3>Answer timer</h3>${segmented('time', TIME_OPTIONS, vals.time, (o) => `${o}s`)}
        <h3>50/50 hints per game</h3>${segmented('hints', HINT_OPTIONS, vals.hints, (o) => (o === 0 ? 'Off' : String(o)))}
        <p class="hint">A hint removes two wrong answers but halves that question's points. The last round is worth double.</p>
+      </div>
      </div>
      <footer class="foot"><button class="btn primary big" data-start data-focus>${party ? 'OPEN THE LOBBY' : 'START GAME'}</button></footer>`,
     'setup',

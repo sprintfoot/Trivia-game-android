@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Trivia Party">
+  <defs>
+    <linearGradient id="tp-bubble" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff2d95"/>
+      <stop offset="1" stop-color="#7b2dff"/>
+    </linearGradient>
+    <linearGradient id="tp-gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff1a0"/>
+      <stop offset="0.45" stop-color="#ffcc33"/>
+      <stop offset="1" stop-color="#ff9a1f"/>
+    </linearGradient>
+    <linearGradient id="tp-ring" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#38e1ff"/>
+      <stop offset="1" stop-color="#9dfcff"/>
+    </linearGradient>
+    <clipPath id="tp-front"><rect x="0" y="92" width="200" height="108"/></clipPath>
+  </defs>
+  <!-- orbit ring, back half -->
+  <ellipse cx="100" cy="90" rx="92" ry="26" transform="rotate(-14 100 90)" fill="none" stroke="url(#tp-ring)" stroke-width="7" opacity="0.55"/>
+  <!-- speech bubble -->
+  <path d="M74 28 H126 A34 34 0 0 1 160 62 V112 A34 34 0 0 1 126 146 H92 L58 176 L66 143 A34 34 0 0 1 40 112 V62 A34 34 0 0 1 74 28 Z"
+        fill="url(#tp-bubble)" stroke="#ffffff" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M74 38 H124 A24 24 0 0 1 148 58" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="6" stroke-linecap="round"/>
+  <!-- question mark: shadow then gold -->
+  <g transform="translate(4 5)" stroke="#1a0f4a" fill="#1a0f4a">
+    <path d="M77 72 C77 46 123 46 123 72 C123 92 100 92 100 110" fill="none" stroke-width="19" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="100" cy="131" r="11" stroke="none"/>
+  </g>
+  <path d="M77 72 C77 46 123 46 123 72 C123 92 100 92 100 110" fill="none" stroke="url(#tp-gold)" stroke-width="19" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="100" cy="131" r="11" fill="url(#tp-gold)"/>
+  <!-- orbit ring, front half -->
+  <ellipse cx="100" cy="90" rx="92" ry="26" transform="rotate(-14 100 90)" fill="none" stroke="url(#tp-ring)" stroke-width="7" clip-path="url(#tp-front)"/>
+  <!-- sparkles and confetti -->
+  <path d="M172 22 L176 34 L188 38 L176 42 L172 54 L168 42 L156 38 L168 34 Z" fill="#9dfcff"/>
+  <path d="M24 30 L27 38 L35 41 L27 44 L24 52 L21 44 L13 41 L21 38 Z" fill="#ffcc33"/>
+  <path d="M178 150 L180 156 L186 158 L180 160 L178 166 L176 160 L170 158 L176 156 Z" fill="#ff6bd6"/>
+  <rect x="20" y="150" width="10" height="5" rx="2" fill="#38e1ff" transform="rotate(-30 25 152)"/>
+  <rect x="150" y="178" width="10" height="5" rx="2" fill="#ffcc33" transform="rotate(25 155 180)"/>
+  <rect x="8" y="98" width="9" height="5" rx="2" fill="#ff2d95" transform="rotate(50 12 100)"/>
+</svg>
