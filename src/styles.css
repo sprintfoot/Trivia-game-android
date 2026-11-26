@@ -2858,3 +2858,46 @@ body.going-home #stage {
   font-weight: 900;
   letter-spacing: 0.04em;
 }
+
+/* ---------- daily challenge ---------- */
+.title-links {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+.title-links small {
+  margin-left: 4px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(255, 204, 51, 0.2);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+.r-daily {
+  margin: 12px auto 4px;
+  max-width: 420px;
+}
+.r-daily p {
+  margin: 4px 0;
+}
+.r-share {
+  margin: 8px auto;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  text-align: center;
+}
+.title-links .btn.link {
+  background: rgba(10, 8, 34, 0.62);
+  border: 1px solid rgba(255, 204, 51, 0.4);
+  border-radius: 999px;
+  padding: 7px 14px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}

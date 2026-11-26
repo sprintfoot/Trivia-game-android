@@ -133,6 +133,10 @@ Setup steps are at the top of `scripts/voice/gen.py`. A test fails if any line i
 
 All music is original and synthesised live in the app: a game-show theme on the title and setup screens, a "here we go" fanfare when a game starts, and adaptive music during questions that speeds up as the timer runs down.
 
+## Daily Challenge
+
+**📅 Daily Challenge** on the title screen: the same 10 mixed questions for everyone on the same day (20 seconds each, no hints). Your first run of the day counts; after that it's practice. Play on back-to-back days to build a 🔥 streak, and tap **Share result** for a spoiler-free 🟩🟥 grid to paste in the family group chat.
+
 ## Hall of Fame and awards
 
 Every finished game is saved on the device. **🏆 Hall of Fame** on the title screen shows the top 10 scores (solo and party), lifetime stats, a trophy case and your best and weakest categories.
