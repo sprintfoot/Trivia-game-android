@@ -77,6 +77,19 @@ The **Fill in the Blank** category has no answer buttons: you type the missing w
 
 When you join, pick one of 16 original cartoon characters. Your character shows in the lobby and along the bottom of the TV, with a ✓ once you've answered. Get it right and your character cheers. Get it wrong (or run out of time) and it takes a tomato to the face or a bop on the head with a cartoon mallet, on the TV and on your phone.
 
+## Real or Made Up, Brain Teasers and Closest Guess
+
+- **Real or Made Up** (40 statements): common myths and surprising true facts. Is it real, or did someone make it up?
+- **Brain Teasers**: riddles, anagrams (type the unscrambled word) and ordering puzzles (put four things in order by year, height or age).
+- **Closest Guess** (25 questions): type a number. Within 10% of the answer scores, and in a party game the closest team scores too. Numbers can be typed like "1,200", "1.2k" or "about 300".
+
+## Lightning round and final wager
+
+Both are on by default and can be switched off in setup under **Special rounds**.
+
+- **⚡ Lightning round:** five quick questions, eight seconds each, from all your categories, just before the final round.
+- **🎲 Final wager:** one last question. Each team bets some or all of its points (at least 500 can always be bet, so nobody is shut out). Right wins the bet, wrong loses it.
+
 ## Name That Tune
 
 The **Name That Tune** category plays a melody and you pick its title. The tune plays a bit at a
@@ -111,6 +124,7 @@ All music is original and synthesised live in the app: a game-show theme on the 
 
 ## Game options
 
+- **Mix categories** (on by default): every round mixes your chosen categories one question at a time, so a picture can follow a tune and then a trivia question. Turn it off to spin the wheel for one category per round instead.
 - Pick any mix of categories, 2–6 rounds, 3/5/7/10 questions per round, and a 10–30 second timer.
 - **Most players are:** Kids (6–10), Teens (11–15) or Adults. Kids only get kid-friendly questions; teens never get adult ones.
 - **50/50 hints:** Off, 1, 3 or 5 per game. A hint removes two wrong answers but halves that question's points.

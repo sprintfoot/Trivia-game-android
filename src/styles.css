@@ -2329,7 +2329,9 @@ button:focus-visible {
   gap: 10px;
   padding: 18px;
   border-radius: 24px;
-  background: rgba(7, 6, 26, 0.75);
+  background: rgba(7, 6, 26, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: 2px solid var(--c);
   box-shadow: 0 0 30px color-mix(in srgb, var(--c) 45%, transparent);
 }
@@ -2489,7 +2491,7 @@ button:focus-visible {
   justify-content: center;
   gap: 10px;
   max-width: min(92vw, 720px);
-  margin: 18px auto 0;
+  margin: auto;
 }
 .mix-icons span {
   display: grid;

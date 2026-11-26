@@ -150,7 +150,8 @@ async function spinForRound(session: GameSession, host: PartyHost | null): Promi
   const cat = getCategory(catId);
   const kind = session.roundKind;
   const final = session.isFinalRound && session.config.rounds > 1;
-  stage.setMode('wheel');
+  // Mixed rounds have no wheel to spin: show the round's categories over the stage instead.
+  stage.setMode(kind === 'normal' && session.mixed ? 'question' : 'wheel');
   stage.setAccent(kind === 'lightning' ? '#ffe14d' : '#38e1ff');
   sound.setMusic('lobby');
   host?.broadcast({
