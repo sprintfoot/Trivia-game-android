@@ -7,6 +7,7 @@ import { BANK } from '../data/bank';
 import { CATEGORIES } from '../game/categories';
 import { TEAM_PRESETS } from '../game/teams';
 import { LINES, type LineKey } from './lines';
+import { isTyped } from '../game/session';
 
 export const ROUND_NUMBERS = [2, 3, 4, 5, 6];
 export const STREAK_MAX = 20;
@@ -48,6 +49,6 @@ export function clipId(text: string): string {
 export function allVoiceTexts(): string[] {
   const texts = new Set<string>();
   for (const key of Object.keys(LINES) as LineKey[]) lineVariants(key).forEach((t) => texts.add(t));
-  for (const q of BANK) if (q.picture?.kind !== 'tune') texts.add(questionSpeech(q.prompt, q.accept ? [] : q.choices));
+  for (const q of BANK) if (q.picture?.kind !== 'tune') texts.add(questionSpeech(q.prompt, isTyped(q) ? [] : q.choices));
   return [...texts];
 }

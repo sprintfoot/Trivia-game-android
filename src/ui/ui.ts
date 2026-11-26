@@ -7,6 +7,7 @@ import { haptics } from '../audio/haptics';
 import logoMarkUrl from '../assets/logo-mark.svg?url';
 import { isMatch } from '../game/match';
 import { avatarHtml, react, wrongReaction } from './avatarFx';
+import { isTyped, parseGuess } from '../game/session';
 
 const root = document.getElementById('ui')!;
 const flashEl = document.getElementById('flash')!;
@@ -169,6 +170,12 @@ export function showSetup(settings: Settings, onSettings: () => void, party = fa
        <h3>Answer timer</h3>${segmented('time', TIME_OPTIONS, vals.time, (o) => `${o}s`)}
        <h3>50/50 hints per game</h3>${segmented('hints', HINT_OPTIONS, vals.hints, (o) => (o === 0 ? 'Off' : String(o)))}
        <p class="hint">A hint removes two wrong answers but halves that question's points. The last round is worth double.</p>
+       <h3>Special rounds</h3>
+       <div class="chips specials">
+         <button class="chip ${settings.lightning ? 'on' : ''}" data-special="lightning" style="--c:#ffe14d"><span class="ico">⚡</span>Lightning round</button>
+         <button class="chip ${settings.finalWager ? 'on' : ''}" data-special="finalWager" style="--c:#ff6bd6"><span class="ico">🎲</span>Final wager</button>
+       </div>
+       <p class="hint">Lightning: 5 quick-fire questions before the final round. Final wager: bet your points on one last question.</p>
       </div>
      </div>
      <footer class="foot"><button class="btn primary big" data-start data-focus>${party ? 'OPEN THE LOBBY' : 'START GAME'}</button></footer>`,
@@ -210,10 +217,21 @@ export function showSetup(settings: Settings, onSettings: () => void, party = fa
       }),
     );
   });
+  const specials = { lightning: settings.lightning, finalWager: settings.finalWager };
+  el.querySelectorAll<HTMLElement>('[data-special]').forEach((b) =>
+    b.addEventListener('click', () => {
+      const key = b.dataset.special as keyof typeof specials;
+      specials[key] = !specials[key];
+      b.classList.toggle('on', specials[key]);
+      sound.toggle(specials[key]);
+    }),
+  );
   refresh();
 
   return new Promise((resolve) => {
     press(startBtn, () => {
+      settings.lightning = specials.lightning;
+      settings.finalWager = specials.finalWager;
       // Keep wheel order consistent with the category list.
       const categories = CATEGORIES.filter((c) => chosen.has(c.id)).map((c) => c.id);
       settings.lastCategories = categories;
@@ -234,6 +252,8 @@ export function showSetup(settings: Settings, onSettings: () => void, party = fa
         timeLimitMs: vals.time * 1000,
         ageGroup: vals.age,
         hints: vals.hints,
+        lightning: specials.lightning,
+        finalWager: specials.finalWager,
       });
     });
   });
@@ -241,15 +261,50 @@ export function showSetup(settings: Settings, onSettings: () => void, party = fa
 
 // ---------------- Round intro & wheel ----------------
 
-export function showRoundBanner(round: number, total: number, final: boolean): void {
+export function showRoundBanner(round: number, total: number, final: boolean, kind: 'normal' | 'lightning' | 'wager' = 'normal'): void {
+  const label = kind === 'lightning' ? '⚡ LIGHTNING ROUND' : kind === 'wager' ? '🎲 FINAL WAGER' : final ? 'FINAL ROUND' : `ROUND ${round}`;
+  const sub =
+    kind === 'lightning' ? '5 quick questions · 8 seconds each' : kind === 'wager' ? 'One question. Bet your points!' : final ? 'Double points!' : `of ${total}`;
   mount(
-    `<div class="round-banner ${final ? 'final' : ''}">
-       <div class="round-label">${final ? 'FINAL ROUND' : `ROUND ${round}`}</div>
-       <div class="round-sub">${final ? 'Double points!' : `of ${total}`}</div>
+    `<div class="round-banner ${final || kind !== 'normal' ? 'final' : ''} ${kind}">
+       <div class="round-label">${label}</div>
+       <div class="round-sub">${sub}</div>
      </div>
-     <p class="spin-hint">Spinning for a category…</p>`,
+     <p class="spin-hint">${kind === 'lightning' ? 'Questions from all your categories!' : 'Spinning for a category…'}</p>`,
     'wheel-screen',
   );
+}
+
+/** The amounts offered for a wager: nothing, a quarter, half, or everything. */
+export function wagerOptions(max: number): number[] {
+  return [...new Set([0, Math.round(max / 4 / 50) * 50, Math.round(max / 2 / 50) * 50, max])];
+}
+
+export function wagerButtons(max: number): string {
+  return wagerOptions(max)
+    .map((v, i, all) => `<button class="btn ${i === all.length - 1 ? 'primary' : 'ghost'} wager-btn" data-wager="${v}">${i === all.length - 1 ? `ALL IN · ${v.toLocaleString()}` : v.toLocaleString()}</button>`)
+    .join('');
+}
+
+/** Solo: choose how much to bet on the final question. */
+export function askWager(cat: Category, score: number, max: number): Promise<number> {
+  const el = mount(
+    `<div class="wager-screen" style="--c:${cat.color}">
+       <div class="round-label">🎲 PLACE YOUR BET</div>
+       <p class="round-sub">${cat.icon} ${esc(cat.name)} · You have ${score.toLocaleString()} points</p>
+       <p class="hint">Right: win your bet. Wrong: lose it.</p>
+       <div class="wager-btns">${wagerButtons(max)}</div>
+     </div>`,
+    'wheel-screen wager',
+  );
+  return new Promise((resolve) => {
+    el.querySelectorAll<HTMLElement>('[data-wager]').forEach((b) =>
+      press(b, () => {
+        sound.lockIn();
+        resolve(Number(b.dataset.wager));
+      }),
+    );
+  });
 }
 
 export async function showCategoryReveal(cat: Category): Promise<void> {
@@ -281,14 +336,16 @@ export interface AnswerPick {
   timeLeftMs: number;
   /** What the player typed, for fill-in-the-blank questions. */
   typed?: string;
+  /** Closest guess: the number typed. */
+  guess?: number | null;
 }
 
 /** The answer area for a fill-in-the-blank question: a box to type in. */
-export function typeAnswerHtml(placeholder = 'Type your answer'): string {
+export function typeAnswerHtml(placeholder = 'Type your answer', numeric = false): string {
   return `<div class="answers type-answers">
-    <div class="ans type-answer" data-i="0"><span class="letter">✏️</span><span class="txt" data-typed>Fill in the blank!</span></div>
+    <div class="ans type-answer" data-i="0"><span class="letter">${numeric ? '🎯' : '✏️'}</span><span class="txt" data-typed>${numeric ? 'Closest guess wins!' : 'Fill in the blank!'}</span></div>
     <form class="type-form" autocomplete="off">
-      <input name="guess" maxlength="40" placeholder="${placeholder}" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="send" data-focus />
+      <input name="guess" maxlength="40" placeholder="${numeric ? 'Type a number' : placeholder}" ${numeric ? 'inputmode="decimal"' : ''} autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="send" data-focus />
       <button class="btn primary" type="submit">GO</button>
     </form>
   </div>`;
@@ -330,10 +387,10 @@ export function askQuestion(q: LiveQuestion, cat: Category, timeLimitMs: number,
          <circle class="prog" cx="50" cy="50" r="44" stroke-dasharray="${RING}" stroke-dashoffset="0"/></svg>
          <span class="secs" data-secs>${Math.ceil(timeLimitMs / 1000)}</span></div>
        <div class="q-card ${q.picture ? 'has-pic' : ''}"><div class="q-cat">${cat.icon} ${esc(cat.name)}</div><div class="q-text">${esc(q.prompt)}</div>${q.picture ? pictureHtml(q.picture) : ''}</div>
-       ${hooks.hintsLeft > 0 && !q.accept ? `<button class="hint-btn" data-hint>💡 50/50 <span>${hooks.hintsLeft} left</span></button>` : ''}
+       ${hooks.hintsLeft > 0 && !isTyped(q) && q.choices.length >= 4 ? `<button class="hint-btn" data-hint>💡 50/50 <span>${hooks.hintsLeft} left</span></button>` : ''}
        ${
-         q.accept
-           ? typeAnswerHtml()
+         isTyped(q)
+           ? typeAnswerHtml('Type your answer', !!q.estimate)
            : `<div class="answers">${q.choices
                .map(
                  (c, i) =>
@@ -356,6 +413,7 @@ export function askQuestion(q: LiveQuestion, cat: Category, timeLimitMs: number,
     let lastSec = Math.ceil(timeLimitMs / 1000);
 
     let typed: string | undefined;
+    let guess: number | null = null;
     const finish = (chosen: number | null) => {
       if (done) return;
       done = true;
@@ -364,10 +422,10 @@ export function askQuestion(q: LiveQuestion, cat: Category, timeLimitMs: number,
       hintBtn?.setAttribute('disabled', '');
       const left = Math.max(0, timeLimitMs - (performance.now() - start));
       el.querySelectorAll<HTMLButtonElement>('.ans').forEach((b) => (b.disabled = true));
-      if (chosen !== null && !q.accept) el.querySelector(`[data-i="${chosen}"]`)?.classList.add('picked');
+      if (chosen !== null && !isTyped(q)) el.querySelector(`[data-i="${chosen}"]`)?.classList.add('picked');
       el.querySelectorAll<HTMLInputElement>('.type-form input, .type-form button').forEach((b) => (b.disabled = true));
       hooks.onTension(0);
-      resolve({ chosen, timeLeftMs: chosen === null ? 0 : left, typed });
+      resolve({ chosen, timeLeftMs: chosen === null ? 0 : left, typed, guess });
     };
 
     const pick = (i: number) => {
@@ -382,12 +440,20 @@ export function askQuestion(q: LiveQuestion, cat: Category, timeLimitMs: number,
     typeForm?.addEventListener('submit', (e) => {
       e.preventDefault();
       const input = typeForm.querySelector('input')!;
-      if (done || !input.value.trim() || !q.accept) return;
+      if (done || !input.value.trim()) return;
+      if (q.estimate) {
+        guess = parseGuess(input.value);
+        if (guess === null) {
+          input.value = '';
+          input.placeholder = 'Numbers only, please';
+          return;
+        }
+      }
       typed = input.value.trim();
       input.blur();
       sound.lockIn();
       haptics.heavy();
-      finish(isMatch(typed, q.accept) ? 0 : 1);
+      finish(q.estimate ? 0 : isMatch(typed, q.accept ?? []) ? 0 : 1);
     });
 
     const hintBtn = el.querySelector<HTMLButtonElement>('[data-hint]');
@@ -408,7 +474,7 @@ export function askQuestion(q: LiveQuestion, cat: Category, timeLimitMs: number,
     const onKey = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase();
       const idx = '1234'.indexOf(k) >= 0 ? '1234'.indexOf(k) : 'abcd'.indexOf(k);
-      if (q.accept) return;
+      if (isTyped(q)) return;
       if (idx >= 0 && idx < q.choices.length) pick(idx);
       else if (k === 'h') hint();
     };
@@ -446,7 +512,7 @@ export async function showReveal(result: AnswerResult, prevScore: number, onPoin
   const el = root.querySelector('.question') as HTMLElement;
   const buttons = el.querySelectorAll<HTMLElement>('.ans');
   buttons[result.question.answer].classList.add('correct');
-  if (result.question.accept) revealTyped(el, result.question.choices[result.question.answer], typedLast, result.correct);
+  if (isTyped(result.question)) revealTyped(el, result.question.choices[result.question.answer], typedLast, result.correct);
   else if (result.chosen !== null && !result.correct) buttons[result.chosen]?.classList.add('wrong');
   buttons.forEach((b, i) => {
     if (i !== result.question.answer && i !== result.chosen) b.classList.add('dim');

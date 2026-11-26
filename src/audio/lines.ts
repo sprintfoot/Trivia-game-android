@@ -21,6 +21,14 @@ export const LINES = {
     'Last round, double points. Anyone can still win. Statistically. Ish.',
     "Final round! If you've been saving your best answers, now would be a great time.",
   ],
+  lightning: [
+    'Lightning round! Five quick questions, eight seconds each. No thinking allowed. Well, a little.',
+    'Lightning round! Fast fingers, faster brains. Go go go!',
+  ],
+  wager: [
+    'Final wager! How sure are you? Bet big, win big. Or lose big. Mostly that.',
+    'It all comes down to this. Place your bets!',
+  ],
   category: [
     '{category}! Oh, I love this one.',
     "It's {category}. Somebody in this room has been waiting for this.",

@@ -2304,3 +2304,101 @@ button:focus-visible {
   font-size: 15px;
   margin-top: 10px;
 }
+
+/* ---------- lightning and wager ---------- */
+
+.round-banner.lightning .round-label {
+  color: #ffe14d;
+  text-shadow: 0 0 18px #ffe14d, 0 0 50px #ff9a1f, 3px 3px 0 #1a0f4a;
+  animation: zap 0.18s steps(2) 6;
+}
+@keyframes zap {
+  50% { opacity: 0.4; transform: skewX(-6deg); }
+}
+.wheel-screen.wager {
+  pointer-events: auto;
+  justify-content: center;
+}
+.wager-screen {
+  margin: auto;
+  width: min(760px, 100%);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 18px;
+  border-radius: 24px;
+  background: rgba(7, 6, 26, 0.75);
+  border: 2px solid var(--c);
+  box-shadow: 0 0 30px color-mix(in srgb, var(--c) 45%, transparent);
+}
+.wager-screen .round-label {
+  font-size: clamp(30px, 6vw, 64px);
+}
+.wager-btns {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  width: min(460px, 100%);
+}
+.wager-btn.on {
+  outline: 3px solid var(--gold);
+  box-shadow: 0 0 20px rgba(255, 204, 51, 0.6);
+}
+.wager-teams {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.wager-team {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 16px;
+  border-radius: 16px;
+  border: 2px solid var(--c);
+  min-width: 150px;
+}
+.wager-team b {
+  color: var(--c);
+}
+.wager-team i {
+  font-style: normal;
+  opacity: 0.6;
+  font-size: 13px;
+}
+.wager-team.locked {
+  box-shadow: 0 0 18px var(--c);
+}
+.wager-team.locked i {
+  opacity: 1;
+  color: var(--good);
+  font-weight: 800;
+}
+.wager-timer {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--gold);
+}
+.ctl-wager .wager-btns {
+  margin: 10px auto;
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  .wager-screen {
+    gap: 4px;
+    padding: 10px;
+  }
+  .wager-screen .round-label {
+    font-size: 28px;
+  }
+  .wager-btns {
+    grid-template-columns: repeat(4, 1fr);
+    width: 100%;
+  }
+  .wager-btns .btn {
+    padding: 10px 6px;
+    font-size: 13px;
+  }
+}

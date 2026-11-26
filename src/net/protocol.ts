@@ -52,9 +52,13 @@ export type HostMsg =
       media: 'picture' | 'tune' | null;
       /** Fill in the blank: type the answer instead of picking one. */
       typed: boolean;
+      /** Closest guess: the answer is a number. */
+      numeric?: boolean;
     }
   | { t: 'votes'; qid: number; votes: { playerId: string; name: string; choice: number; text?: string }[]; decided: boolean }
   | { t: 'hint'; qid: number; hidden: number[]; hintsLeft: number }
+  | { t: 'wager'; max: number; score: number; category: PublicCategory; durationMs: number }
+  | { t: 'bet'; amount: number; by: string }
   | {
       t: 'reveal';
       qid: number;
@@ -74,6 +78,7 @@ export type PlayerMsg =
   | { t: 'team'; teamId: string }
   | { t: 'vote'; qid: number; choice: number }
   | { t: 'guess'; qid: number; text: string }
+  | { t: 'bet'; amount: number }
   | { t: 'hint'; qid: number };
 
 export const PEER_PREFIX = 'trivia-party-room-';

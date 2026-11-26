@@ -23,6 +23,8 @@ export interface HostEvents {
   onVote?: (teamId: string, playerId: string) => void;
   /** A team asked for a 50/50 hint. Return the hidden answers, or null if not allowed. */
   onHint?: (teamId: string, qid: number) => { hidden: number[]; hintsLeft: number } | null;
+  /** Final wager: a team member placed a bet. Returns the amount accepted. */
+  onBet?: (teamId: string, amount: number) => number | null;
 }
 
 const MAX_NAME = 16;
@@ -184,6 +186,20 @@ export class PartyHost {
     if (p) this.vote(p, this.qid, choice);
   }
 
+  /** The host's own bet in the final wager. */
+  localBet(amount: number): number | null {
+    const p = this.localPlayer;
+    return p ? this.bet(p, amount) : null;
+  }
+
+  private bet(p: Player, raw: unknown): number | null {
+    const amount = Number(raw);
+    if (!p.teamId || !Number.isFinite(amount) || !this.events.onBet) return null;
+    const accepted = this.events.onBet(p.teamId, amount);
+    if (accepted !== null) this.sendToTeam(p.teamId, { t: 'bet', amount: accepted, by: p.name });
+    return accepted;
+  }
+
   /** The host's own typed answer (fill in the blank). */
   localGuess(text: string): void {
     const p = this.localPlayer;
@@ -220,6 +236,9 @@ export class PartyHost {
         break;
       case 'guess':
         this.guess(p, msg.qid, msg.text);
+        break;
+      case 'bet':
+        this.bet(p, msg.amount);
         break;
       case 'hint': {
         if (!p.teamId || msg.qid !== this.qid || !this.questionOpen) return;
@@ -296,6 +315,13 @@ export class PartyHost {
     if (!this.matcher || !text) return;
     // 0 is the right answer; every wrong guess counts as choice 1.
     this.vote(p, qid, this.matcher(text) ? 0 : 1, text);
+  }
+
+  /** Each team member's latest typed answer. */
+  teamTexts(teamId: string): string[] {
+    const latest = new Map<string, string>();
+    for (const v of this.votesFor(teamId)) if (v.text) latest.set(v.playerId, v.text);
+    return [...latest.values()];
   }
 
   /** What a team typed for the answer it went with (fill in the blank). */

@@ -15,6 +15,8 @@ export interface Settings {
   timeLimitSec: number;
   ageGroup: AgeGroup;
   hints: number;
+  lightning: boolean;
+  finalWager: boolean;
   teamMode: 'teams' | 'players';
   teamCount: number;
   playerName: string;
@@ -37,6 +39,8 @@ const DEFAULTS: Settings = {
   timeLimitSec: 15,
   ageGroup: 'adult',
   hints: 3,
+  lightning: true,
+  finalWager: true,
   teamMode: 'teams',
   teamCount: 2,
   playerName: '',

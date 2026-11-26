@@ -1,6 +1,6 @@
 import './styles.css';
 import { BANK } from './data/bank';
-import { CATEGORIES, getCategory, type Category } from './game/categories';
+import { CATEGORIES, getCategory, type Category, type CategoryId } from './game/categories';
 import { GameSession, type GameConfig } from './game/session';
 import { decideTeamAnswer } from './game/teams';
 import { PartyHost } from './net/host';
@@ -16,6 +16,7 @@ import { loadSettings, saveSettings, type Settings } from './settings';
 import * as ui from './ui/ui';
 import { isMatch } from './game/match';
 import { DEFAULT_AVATAR } from './game/avatars';
+import { isTyped, parseGuess } from './game/session';
 
 const settings = loadSettings();
 const stage = new Stage(document.getElementById('stage') as HTMLCanvasElement, settings.quality);
@@ -45,8 +46,14 @@ async function playGame(config: GameConfig): Promise<'again' | 'setup'> {
 
     stage.setMode('question');
     sound.setMusic('question');
+    if (session.roundKind === 'wager') {
+      const bet = await ui.askWager(cat, session.score, session.maxWager());
+      session.setWager('solo', bet);
+      stage.setMode('question');
+    }
     while (session.hasNextQuestion()) {
       const q = session.nextQuestion();
+      const qcat = catFor(session, cat, q);
       const hud: ui.Hud = {
         score: session.score,
         streak: session.streak,
@@ -56,8 +63,8 @@ async function playGame(config: GameConfig): Promise<'again' | 'setup'> {
         totalQuestions: session.totalQuestions,
         multiplier: session.multiplier,
       };
-      if (q.picture?.kind !== 'tune') voice.question(q.prompt, q.accept ? [] : q.choices);
-      const pick = await ui.askQuestion(q, cat, config.timeLimitMs, hud, {
+      if (q.picture?.kind !== 'tune') voice.question(q.prompt, isTyped(q) ? [] : q.choices);
+      const pick = await ui.askQuestion(q, qcat, session.timeLimitMs, hud, {
         onTension: (t) => {
           stage.setTension(t);
           sound.setIntensity(t);
@@ -73,11 +80,11 @@ async function playGame(config: GameConfig): Promise<'again' | 'setup'> {
         },
       });
       const before = session.score;
-      const result = session.submit(pick.chosen, pick.timeLeftMs);
+      const result = session.submit(pick.chosen, pick.timeLeftMs, pick.guess);
 
       if (result.correct) {
         if (result.streak >= 3) voice.line('streak', { n: result.streak });
-        else if (pick.timeLeftMs > config.timeLimitMs * 0.7) voice.line('fast');
+        else if (pick.timeLeftMs > session.timeLimitMs * 0.7) voice.line('fast');
         else voice.line('correct');
       } else voice.line(pick.chosen === null ? 'timeUp' : 'wrong');
       if (result.correct) {
@@ -127,16 +134,35 @@ async function playGame(config: GameConfig): Promise<'again' | 'setup'> {
 
 const pub = (c: Category): PublicCategory => ({ name: c.name, icon: c.icon, color: c.color });
 
+/** Stands in for a category during the lightning round, whose questions come from all of them. */
+const LIGHTNING_CAT: Category = { id: 'general', name: 'Lightning Round', icon: '⚡', color: '#ffe14d' };
+
+/** The category to show with a question: its own one in the lightning round. */
+const catFor = (session: GameSession, roundCat: Category, q: { category: CategoryId }): Category =>
+  session.roundKind === 'lightning' ? getCategory(q.category) : roundCat;
+
 async function spinForRound(session: GameSession, host: PartyHost | null): Promise<Category> {
   const catId = session.startRound();
   const cat = getCategory(catId);
-  const final = session.isFinalRound && session.totalRounds > 1;
+  const kind = session.roundKind;
+  const final = session.isFinalRound && session.config.rounds > 1;
   stage.setMode('wheel');
-  stage.setAccent('#38e1ff');
+  stage.setAccent(kind === 'lightning' ? '#ffe14d' : '#38e1ff');
   sound.setMusic('lobby');
-  host?.broadcast({ t: 'screen', screen: 'wheel', text: final ? 'Final round! Double points!' : `Round ${session.currentRound}` });
-  ui.showRoundBanner(session.currentRound, session.totalRounds, final);
-  if (final) voice.line('finalRound');
+  host?.broadcast({
+    t: 'screen',
+    screen: 'wheel',
+    text: kind === 'lightning' ? '⚡ Lightning round!' : kind === 'wager' ? '🎲 Final wager!' : final ? 'Final round! Double points!' : `Round ${session.currentRound}`,
+  });
+  ui.showRoundBanner(session.currentRound, session.totalRounds, final, kind);
+  if (kind === 'lightning') {
+    voice.line('lightning');
+    sound.introStinger();
+    await ui.wait(3200);
+    return LIGHTNING_CAT;
+  }
+  if (kind === 'wager') voice.line('wager');
+  else if (final) voice.line('finalRound');
   else if (session.currentRound > 1) voice.line('round', { n: session.currentRound });
   await ui.wait(900);
   await stage.wheel.spinTo(catId, (speed) => {
@@ -200,15 +226,17 @@ async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<voi
     while (session.hasNextRound()) {
       const roundStart = new Map(session.teams.map((t) => [t.id, t.score]));
       const cat = await spinForRound(session, host);
+      if (session.roundKind === 'wager') await partyWager(session, host, cat);
       stage.setMode('question');
       sound.setMusic('question');
 
       while (session.hasNextQuestion()) {
         const q = session.nextQuestion();
+        const qcat = catFor(session, cat, q);
         qid += 1;
         const accept = q.accept;
-        host.matcher = accept ? (text) => isMatch(text, accept) : null;
-        host.openQuestion(qid, config.timeLimitMs);
+        host.matcher = accept ? (text) => isMatch(text, accept) : q.estimate ? (text) => parseGuess(text) !== null : null;
+        host.openQuestion(qid, session.timeLimitMs);
         const opened = performance.now();
         host.each((p) => ({
           t: 'question',
@@ -218,23 +246,24 @@ async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<voi
           multiplier: session.multiplier,
           prompt: q.prompt,
           // Never send a fill-in-the-blank answer to the phones.
-          choices: q.accept ? [] : q.choices,
-          category: pub(cat),
-          durationMs: config.timeLimitMs,
+          choices: isTyped(q) ? [] : q.choices,
+          category: pub(qcat),
+          durationMs: session.timeLimitMs,
           hidden: p.teamId ? session.hiddenFor(p.teamId) : [],
-          hintsLeft: !q.accept && p.teamId && session.teams.some((t) => t.id === p.teamId) ? session.team(p.teamId).hintsLeft : 0,
+          hintsLeft: p.teamId && session.teams.some((t) => t.id === p.teamId) && session.canUseHint(p.teamId) ? session.team(p.teamId).hintsLeft : 0,
           teamSize: p.teamId ? host.membersOf(p.teamId).length : 1,
           media: q.picture ? (q.picture.kind === 'tune' ? 'tune' : 'picture') : null,
-          typed: !!q.accept,
+          typed: isTyped(q),
+          numeric: !!q.estimate,
         }));
 
-        if (q.picture?.kind !== 'tune') voice.question(q.prompt, q.accept ? [] : q.choices);
+        if (q.picture?.kind !== 'tune') voice.question(q.prompt, isTyped(q) ? [] : q.choices);
         const me = host.localPlayer;
         const myTeam = me?.teamId && session.teams.some((t) => t.id === me.teamId) ? me.teamId : null;
         const tv = party.tvQuestion(
           q,
-          cat,
-          config.timeLimitMs,
+          qcat,
+          session.timeLimitMs,
           session.teams,
           { number: q.number, total: session.totalQuestions, multiplier: session.multiplier },
           {
@@ -249,7 +278,8 @@ async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<voi
               me && myTeam
                 ? {
                     name: me.name,
-                    hintsLeft: q.accept ? 0 : session.team(myTeam).hintsLeft,
+                    hintsLeft: session.canUseHint(myTeam) ? session.team(myTeam).hintsLeft : 0,
+                    numeric: !!q.estimate,
                     onPick: (i) => host.localVote(i),
                     onGuess: (text) => host.localGuess(text),
                     onHint: () => host.localHint()?.hidden ?? null,
@@ -273,7 +303,14 @@ async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<voi
         const results = session.submitAll(
           session.teams.map((t) => {
             const d = decideTeamAnswer(host.votesFor(t.id));
-            return { teamId: t.id, chosen: d.choice, timeLeftMs: d.at === null ? 0 : Math.max(0, config.timeLimitMs - (d.at - opened)) };
+            // Closest guess: the team's number is the middle of its members' guesses.
+            const guesses = q.estimate ? host.teamTexts(t.id).map(parseGuess).filter((n): n is number => n !== null) : [];
+            return {
+              teamId: t.id,
+              chosen: d.choice,
+              timeLeftMs: d.at === null ? 0 : Math.max(0, session.timeLimitMs - (d.at - opened)),
+              guess: guesses.length ? median(guesses) : null,
+            };
           }),
         );
         if (results.some((r) => r.correct)) {
@@ -310,7 +347,11 @@ async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<voi
         await party.tvReveal(
           results,
           session.teams,
-          q.accept ? new Map(results.map((r) => [r.teamId, host.teamText(r.teamId, r.chosen)])) : undefined,
+          q.accept
+            ? new Map(results.map((r) => [r.teamId, host.teamText(r.teamId, r.chosen)]))
+            : q.estimate
+              ? new Map(results.map((r) => [r.teamId, r.guess == null ? undefined : r.guess.toLocaleString('en-US')]))
+              : undefined,
         );
       }
 
@@ -339,6 +380,41 @@ async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<voi
     // Rematch: back to the lobby with the same room code so people can swap teams.
     host.bindScores(() => []);
   }
+}
+
+/** Final wager: every team bets on its phones (or the host on the TV) before the last question. */
+async function partyWager(session: GameSession, host: PartyHost, cat: Category): Promise<void> {
+  const DURATION = 20000;
+  const bets = new Set<string>();
+  const me = host.localPlayer;
+  const myTeam = me?.teamId && session.teams.some((t) => t.id === me.teamId) ? me.teamId : null;
+  const inGame = (teamId: string | null): teamId is string => !!teamId && session.teams.some((t) => t.id === teamId);
+  const tv = party.tvWager(
+    cat,
+    session.teams,
+    DURATION,
+    // Done once every team with someone online has bet.
+    () => session.teams.every((t) => bets.has(t.id) || host.membersOf(t.id).every((m) => !m.conn && !m.local)),
+    me && myTeam ? { name: me.name, max: session.maxWager(myTeam), onBet: (amount) => host.localBet(amount) } : undefined,
+  );
+  host.events.onBet = (teamId, amount) => {
+    if (!inGame(teamId)) return null;
+    const accepted = session.setWager(teamId, amount);
+    bets.add(teamId);
+    tv.setBet(teamId, accepted);
+    return accepted;
+  };
+  host.each((p) => ({
+    t: 'wager',
+    max: inGame(p.teamId) ? session.maxWager(p.teamId) : 0,
+    score: inGame(p.teamId) ? session.team(p.teamId).score : 0,
+    category: pub(cat),
+    durationMs: DURATION,
+  }));
+  await tv.done;
+  // A moment for late taps to land, then lock the bets.
+  await ui.wait(1200);
+  host.events.onBet = undefined;
 }
 
 // ---------------- Party: phone ----------------
@@ -420,3 +496,9 @@ async function main(): Promise<void> {
 }
 
 void main();
+
+function median(xs: number[]): number {
+  const s = xs.slice().sort((a, b) => a - b);
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : Math.round((s[m - 1] + s[m]) / 2);
+}
