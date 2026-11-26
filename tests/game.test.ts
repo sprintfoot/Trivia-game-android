@@ -45,6 +45,7 @@ describe('question bank', () => {
     }
     expect(BANK.length).toBeGreaterThanOrEqual(380);
     for (const c of CATEGORIES) {
+      if (c.id === 'custom') continue; // written by the players
       const qs = BANK.filter((q) => q.category === c.id);
       expect(qs.length).toBeGreaterThanOrEqual(15);
       // Enough kid-friendly questions that kids games don't fall back to the full category.
@@ -597,7 +598,7 @@ describe('holiday packs', async () => {
     expect(seasonalPack(new Date(2027, 3, 1))).toBeNull();
   });
   it('has at least 15 questions in every pack', () => {
-    for (const c of PACK_CATEGORIES) expect(BANK.filter((q) => q.category === c).length).toBeGreaterThanOrEqual(15);
+    for (const c of PACK_CATEGORIES.filter((x) => x !== 'custom')) expect(BANK.filter((q) => q.category === c).length).toBeGreaterThanOrEqual(15);
   });
 });
 
@@ -656,5 +657,40 @@ describe('daily challenge', async () => {
 
   it('uses local dates', () => {
     expect(daily.dateKey(new Date(2026, 0, 5))).toBe('2026-01-05');
+  });
+});
+
+describe('custom question packs', async () => {
+  const custom = await import('../src/game/custom');
+
+  it('reads pasted questions and reports bad lines', () => {
+    const { questions, errors } = custom.parseBulk(
+      ['# The Smiths', "What is Grandpa's favorite snack? | Pretzels | Popcorn | Grapes", '', 'No answers here', 'Same | A | a', 'Two choices | Yes | No'].join('\n'),
+    );
+    expect(questions).toEqual([
+      { prompt: "What is Grandpa's favorite snack?", right: 'Pretzels', wrong: ['Popcorn', 'Grapes'] },
+      { prompt: 'Two choices', right: 'Yes', wrong: ['No'] },
+    ]);
+    expect(errors).toEqual(['Line 4: Add the right answer.', 'Line 5: Each answer must be different.']);
+  });
+
+  it('round-trips a pack through shareable text', () => {
+    const pack = { ...custom.newPack('Family'), questions: [{ prompt: 'Q1?', right: 'A', wrong: ['B', 'C', 'D'] }] };
+    const back = custom.parseBulk(custom.exportPack(pack));
+    expect(back.questions).toEqual(pack.questions);
+  });
+
+  it('plays packs that are switched on, for every age group', () => {
+    const on = { ...custom.newPack('On'), questions: [{ prompt: 'Who is the tallest cousin?', right: 'Mike', wrong: ['Ann', 'Lou'] }] };
+    const off = { ...custom.newPack('Off'), on: false, questions: [{ prompt: 'Hidden?', right: 'Y', wrong: ['N'] }] };
+    const qs = custom.customBankQuestions([on, off]);
+    expect(qs).toHaveLength(1);
+    expect(custom.customCount([on, off])).toBe(1);
+    const s = new GameSession(config({ categories: ['custom'], rounds: 1, questionsPerRound: 2, ageGroup: 'kids' }), [...BANK, ...qs], mulberry32(5));
+    s.startRound();
+    const q = s.nextQuestion();
+    expect(q.prompt).toBe('Who is the tallest cousin?');
+    expect([...q.choices].sort()).toEqual(['Ann', 'Lou', 'Mike']);
+    expect(s.submit(q.choices.indexOf('Mike'), 5000).correct).toBe(true);
   });
 });
