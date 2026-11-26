@@ -25,7 +25,7 @@ npm test           # game logic tests
 
 ## Build the Android app
 
-**Easiest:** every push and pull request runs the **Build Android APK** GitHub Action. Open the run under the repo's Actions tab and download `trivia-party-debug-apk`, then install it on your phone (you'll need to allow installs from unknown sources).
+**Easiest:** every push and pull request runs the **Build Android APK** GitHub Action. It publishes the APK to the **Latest test build** pre-release on the repo's Releases page. Open that page on your phone, tap `trivia-party.apk`, and install it (you'll need to allow installs from unknown sources).
 
 **Locally** (needs Android Studio):
 
