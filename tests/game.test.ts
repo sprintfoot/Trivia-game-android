@@ -23,9 +23,15 @@ describe('question bank', () => {
       expect(new Set(q.choices).size).toBe(4);
       expect(q.answer).toBeGreaterThanOrEqual(0);
       expect(q.answer).toBeLessThan(4);
+      expect(['kids', 'teen', 'adult']).toContain(q.age);
+      expect(CATEGORIES.some((c) => c.id === q.category)).toBe(true);
     }
+    expect(BANK.length).toBeGreaterThanOrEqual(380);
     for (const c of CATEGORIES) {
-      expect(BANK.filter((q) => q.category === c.id).length).toBeGreaterThanOrEqual(10);
+      const qs = BANK.filter((q) => q.category === c.id);
+      expect(qs.length).toBeGreaterThanOrEqual(15);
+      // Enough kid-friendly questions that kids games don't fall back to the full category.
+      expect(qs.filter((q) => q.age === 'kids').length).toBeGreaterThanOrEqual(4);
     }
   });
 });

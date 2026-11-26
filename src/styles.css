@@ -243,6 +243,12 @@ button {
   opacity: 0.55;
   transition: all 0.15s;
 }
+.scroll h3 .count {
+  letter-spacing: 0.05em;
+  text-transform: none;
+  margin-left: 6px;
+  opacity: 0.7;
+}
 .chip .ico {
   font-size: 20px;
 }
