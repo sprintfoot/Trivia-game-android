@@ -17,6 +17,10 @@ public class MainActivity extends BridgeActivity {
         // Keep the screen on during play; a party game shouldn't dim mid-question.
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         enterImmersive();
+        // Let the intro music start on the title screen without waiting for a first tap.
+        if (getBridge() != null && getBridge().getWebView() != null) {
+            getBridge().getWebView().getSettings().setMediaPlaybackRequiresUserGesture(false);
+        }
     }
 
     @Override

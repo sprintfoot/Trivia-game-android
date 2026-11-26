@@ -148,7 +148,24 @@ button {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 18px;
+  justify-content: center;
+  gap: clamp(10px, 3vh, 28px);
+  max-height: 100%;
+}
+.brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(4px, 1.6vh, 16px);
+}
+.logo-mark {
+  width: clamp(72px, min(34vw, 20vh), 220px);
+  height: auto;
+  filter: drop-shadow(0 0 18px rgba(255, 45, 149, 0.55));
+  animation: mark-float 3.2s ease-in-out infinite;
+}
+@keyframes mark-float {
+  50% { transform: translateY(-6px) rotate(3deg); }
 }
 .logo {
   display: flex;
@@ -160,7 +177,7 @@ button {
 }
 .logo .l1,
 .logo .l2 {
-  font-size: clamp(64px, 20vw, 130px);
+  font-size: clamp(34px, min(19vw, 10vh), 130px);
   letter-spacing: -0.02em;
 }
 .logo .l1 {
@@ -177,7 +194,7 @@ button {
 }
 .tagline {
   margin: 0;
-  font-size: 18px;
+  font-size: clamp(11px, 2.2vh, 18px);
   letter-spacing: 0.3em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.8);
@@ -212,8 +229,13 @@ button {
 .setup {
   background: linear-gradient(180deg, rgba(7, 6, 26, 0.55), rgba(7, 6, 26, 0.85));
 }
+.bar,
+.foot {
+  flex: none;
+}
 .scroll {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 4px 2px 12px;
 }
@@ -821,23 +843,11 @@ button:focus-visible {
   .screen {
     padding: calc(14px + var(--safe-top)) max(24px, env(safe-area-inset-right)) calc(14px + var(--safe-bottom)) max(24px, env(safe-area-inset-left));
   }
-  .setup .scroll {
+  .setup .setup-cols {
     display: grid;
     grid-template-columns: 1.2fr 1fr;
     column-gap: 28px;
-    align-content: start;
-  }
-  .setup .scroll > h3:first-child,
-  .setup .scroll > .chips {
-    grid-column: 1;
-  }
-  .setup .scroll > .chips {
-    grid-row: 2 / span 12;
-    align-self: start;
-    grid-auto-rows: min-content;
-  }
-  .setup .scroll > :not(.chips):not(:first-child) {
-    grid-column: 2;
+    align-items: start;
   }
   .setup .scroll h3 {
     margin-top: 14px;
@@ -892,6 +902,71 @@ button:focus-visible {
 
 /* Short landscape screens (phones on their side): tighten everything so it fits. */
 @media (orientation: landscape) and (max-height: 520px) {
+  .bar h2 {
+    font-size: 20px;
+  }
+  .bar .icon-btn {
+    width: 38px;
+    height: 38px;
+    font-size: 17px;
+  }
+  .scroll h3 {
+    margin: 12px 0 6px;
+    font-size: 11px;
+  }
+  .chip {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+  .seg-opt {
+    padding: 8px 0;
+    font-size: 14px;
+  }
+  .setup .foot .btn.big {
+    padding: 12px 20px;
+    font-size: 17px;
+  }
+  .lobby-screen .join-steps {
+    padding: 10px 14px;
+    gap: 4px;
+  }
+  .lobby-screen .join-steps .step {
+    font-size: 12px;
+  }
+  .lobby-screen .qr {
+    width: min(120px, 30vh) !important;
+    height: min(120px, 30vh) !important;
+  }
+  .lobby-screen .room-code span {
+    width: 40px;
+    height: 46px;
+    font-size: 28px;
+    border-radius: 10px;
+  }
+  .lobby-screen .lobby {
+    gap: 12px;
+  }
+  .lobby-screen .team-card {
+    padding: 8px 12px;
+  }
+  .lobby-screen .team-name {
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+  .pic-tune {
+    padding: 4px;
+    gap: 10px;
+  }
+  .pic-tune .vinyl {
+    width: min(70px, 18vh);
+  }
+  .pic-tune .eq {
+    height: 40px;
+  }
+  .lobby-screen .play-too {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
   .question .answers {
     grid-template-columns: 1fr 1fr;
     gap: 8px;
@@ -979,7 +1054,7 @@ button:focus-visible {
 /* ---------- title actions ---------- */
 
 .title-actions {
-  margin-top: 22px;
+  margin-top: clamp(0px, 2vh, 22px);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -999,6 +1074,51 @@ button:focus-visible {
 }
 .title .btn {
   margin-top: 0;
+}
+/* Wide screens (phone sideways, TV): logo on the left, buttons on the right. */
+@media (orientation: landscape) and (min-aspect-ratio: 4/3) {
+  .title-wrap {
+    flex-direction: row;
+    gap: 6vw;
+    width: 100%;
+  }
+  .brand {
+    flex: 0 1 auto;
+  }
+  .logo-mark {
+    width: clamp(60px, min(16vw, 26vh), 240px);
+  }
+  .logo .l1,
+  .logo .l2 {
+    font-size: clamp(30px, min(10vw, 17vh), 170px);
+  }
+  .title-actions {
+    margin-top: 0;
+    width: min(440px, 38vw);
+  }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  .title .btn.big {
+    font-size: 17px;
+    padding: 14px 20px;
+  }
+  .title-row .btn {
+    padding: 11px 8px;
+    font-size: 14px;
+  }
+}
+@media (orientation: landscape) and (min-width: 1100px) and (min-height: 600px) {
+  .title-actions {
+    width: min(560px, 34vw);
+  }
+  .title .btn.big {
+    font-size: clamp(20px, 1.6vw, 34px);
+    padding: 1.4vw 2vw;
+  }
+  .title-row .btn {
+    font-size: clamp(15px, 1.1vw, 24px);
+    padding: 1vw 0.8vw;
+  }
 }
 
 /* ---------- lobby (TV) ---------- */
@@ -1104,6 +1224,30 @@ button:focus-visible {
   grid-column: 1 / -1;
   padding: 20px;
 }
+.lobby-right {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.play-too {
+  align-self: center;
+  padding: 12px 20px;
+  font-size: 15px;
+}
+.play-too.on {
+  border-color: var(--good);
+  color: var(--good);
+}
+.pick-hint {
+  margin: 0;
+}
+.team-card.pickable {
+  cursor: pointer;
+}
+.member.me {
+  background: rgba(255, 255, 255, 0.25);
+  outline: 1px solid #fff;
+}
 @keyframes pop-in {
   from { transform: scale(0.4); opacity: 0; }
 }
@@ -1116,7 +1260,7 @@ button:focus-visible {
   .lobby-join {
     flex: none;
   }
-  .lobby-teams {
+  .lobby-right {
     flex: 1;
     align-self: center;
   }
@@ -1193,6 +1337,19 @@ button:focus-visible {
 .party-q .ans {
   cursor: default;
 }
+.party-q button.ans {
+  cursor: pointer;
+}
+.tv-local {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.tv-local .tv-hint {
+  font-size: 13px;
+}
 .ans .badges {
   margin-left: auto;
   display: flex;
@@ -1264,13 +1421,13 @@ button:focus-visible {
 .board-row .bname {
   color: var(--c);
 }
-.bar {
+.score-bar {
   height: 14px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.08);
   overflow: hidden;
 }
-.bar i {
+.score-bar i {
   display: block;
   height: 100%;
   background: var(--c);

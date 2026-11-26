@@ -83,9 +83,14 @@ export const LINES = {
   ],
   tie: ["It's a tie! You're all winners. Or all equally not losers."],
   soloEnd: [
-    'Game over! {score} points. Not bad. Not bad at all.',
-    "That's the game! You scored {score}. Think you can beat it?",
+    'Game over! Not bad. Not bad at all.',
+    "That's the game! Think you can beat that score?",
+    'And that is the game. Take a bow, then try again.',
   ],
+  // Used when a name or number has no recorded clip (custom player names, very long streaks).
+  leadAny: ['We have a new leader!', 'Shake-up at the top! Somebody new is in first place.'],
+  winnerAny: ['And we have a winner! Take a victory lap. Around the couch is fine.', 'Give it up for our champion! Absolute trivia royalty.'],
+  streakAny: ['Another one! The streak continues!', 'Still on fire! Somebody stop them!'],
 } as const;
 
 export type LineKey = keyof typeof LINES;

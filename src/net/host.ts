@@ -8,7 +8,11 @@ export interface Player {
   name: string;
   teamId: string | null;
   conn: DataConnection | null;
+  /** The host playing along on the TV/host screen itself (no phone connection). */
+  local?: boolean;
 }
+
+const isOnline = (p: Player) => !!p.conn || !!p.local;
 
 export interface HostEvents {
   /** Lobby membership changed (join, leave, team switch). */
@@ -119,20 +123,68 @@ export class PartyHost {
         setTimeout(() => conn.close(), 300);
         return null;
       }
-      const id = Math.random().toString(36).slice(2, 10);
-      p = { id, name, teamId: null, conn };
-      this.players.set(id, p);
-      if (this.mode === 'players') {
-        const color = PLAYER_COLORS[this.teams.length % PLAYER_COLORS.length];
-        this.teams.push({ id: `p-${id}`, name, color });
-        p.teamId = `p-${id}`;
-      } else {
-        p.teamId = this.smallestTeam();
-      }
+      p = this.addPlayer(name, conn);
     }
     this.send(p, { t: 'welcome', playerId: p.id, teamId: p.teamId, mode: this.mode });
     this.lobbyChanged();
     return p.id;
+  }
+
+  private addPlayer(name: string, conn: DataConnection | null, local = false): Player {
+    const id = Math.random().toString(36).slice(2, 10);
+    const p: Player = { id, name, teamId: null, conn, local };
+    this.players.set(id, p);
+    if (this.mode === 'players') {
+      const color = PLAYER_COLORS[this.teams.length % PLAYER_COLORS.length];
+      this.teams.push({ id: `p-${id}`, name, color });
+      p.teamId = `p-${id}`;
+    } else {
+      p.teamId = this.smallestTeam();
+    }
+    return p;
+  }
+
+  // ---------- the host playing along ----------
+
+  get localPlayer(): Player | undefined {
+    return [...this.players.values()].find((p) => p.local);
+  }
+
+  /** Adds the host as a player who answers on the host screen. Only before the game starts. */
+  addLocal(name: string): Player | null {
+    if (this.locked) return null;
+    const p = this.localPlayer ?? this.addPlayer(name.trim().slice(0, MAX_NAME) || 'Host', null, true);
+    this.lobbyChanged();
+    return p;
+  }
+
+  removeLocal(): void {
+    const p = this.localPlayer;
+    if (!p || this.locked) return;
+    this.players.delete(p.id);
+    if (this.mode === 'players') this.teams = this.teams.filter((t) => t.id !== p.teamId);
+    this.lobbyChanged();
+  }
+
+  /** Moves the host's own player to another team (teams mode, lobby only). */
+  moveLocal(teamId: string): void {
+    const p = this.localPlayer;
+    if (p) this.handle(p.id, { t: 'team', teamId });
+  }
+
+  /** The host's own answer, made on the host screen. */
+  localVote(choice: number): void {
+    const p = this.localPlayer;
+    if (p) this.vote(p, this.qid, choice);
+  }
+
+  /** The host's own 50/50 request. Returns what was hidden, or null if not allowed. */
+  localHint(): { hidden: number[]; hintsLeft: number } | null {
+    const p = this.localPlayer;
+    if (!p?.teamId || !this.questionOpen) return null;
+    const res = this.events.onHint?.(p.teamId, this.qid) ?? null;
+    if (res) this.sendToTeam(p.teamId, { t: 'hint', qid: this.qid, hidden: res.hidden, hintsLeft: res.hintsLeft });
+    return res;
   }
 
   private smallestTeam(): string {
@@ -180,7 +232,7 @@ export class PartyHost {
         ...t,
         score: s?.score ?? 0,
         hintsLeft: s?.hintsLeft ?? 0,
-        members: this.membersOf(t.id).map((m) => ({ id: m.id, name: m.name, online: !!m.conn })),
+        members: this.membersOf(t.id).map((m) => ({ id: m.id, name: m.name, online: isOnline(m) })),
       };
     });
   }
@@ -218,7 +270,7 @@ export class PartyHost {
   }
 
   teamDecided(teamId: string): boolean {
-    const online = this.membersOf(teamId).filter((m) => m.conn);
+    const online = this.membersOf(teamId).filter(isOnline);
     if (online.length === 0) return true;
     const voters = new Set(this.votesFor(teamId).map((v) => v.playerId));
     return online.every((m) => voters.has(m.id));

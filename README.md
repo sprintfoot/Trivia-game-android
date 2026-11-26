@@ -38,6 +38,8 @@ Type your name. In team games, tap the team you want to be on (you're placed on 
 
 **4. Start.** When everyone's in, tap **START GAME** on the host.
 
+**Want to play too?** If you're running the host screen, tap **I'M PLAYING TOO** in the lobby (then tap a team to join it). You answer by tapping the answers on the host screen, or with 1-4 / A-D on a keyboard or remote. Or just join from your own phone like everyone else.
+
 **5. Play.** Each round the wheel picks a category. The question and answers show on the TV; your phone shows the answer buttons.
 - **Teams vote.** Each teammate taps an answer and sees teammates' votes live. The team's answer is its most popular vote (ties go to whichever was picked first), and you can change your vote until time runs out.
 - The question ends as soon as everyone has voted, or when the timer runs out. Faster answers score more.
@@ -80,7 +82,22 @@ voice doesn't read these questions out.
 
 ## Host voice
 
-A game-show host cracks original one-liners throughout the game: at the start, each round, the category, right and wrong answers, streaks, hints, lead changes and the winner. Lines are in `src/audio/lines.ts`, so it's easy to add more. The voice is the device's own text-to-speech (Android's TTS in the app, the browser's voice on the web), so nothing is recorded or downloaded. In Settings you can turn the host voice off, or turn on **Read questions aloud** for TV play.
+A game-show host cracks original one-liners throughout the game: at the start, each round, the category, right and wrong answers, streaks, hints, lead changes and the winner. With **Read questions aloud** on (Settings), the host also reads each question and its answers.
+
+The voice is a natural-sounding recording, not the robotic phone voice. Every line and every question was recorded ahead of time with [Kokoro](https://github.com/hexgrad/kokoro), an open voice model (Apache-2.0), and ships with the game in `public/voice/` (about 14 MB of MP3s). Lines with a name in them are recorded for every category and every preset team name. Custom player names in Solo players mode get a line without the name. Anything without a recording falls back to the device's own text-to-speech.
+
+**After adding questions or lines,** re-record (only new lines are recorded):
+
+```
+node scripts/voice/texts.mjs /tmp/voice-texts.json
+.venv-voice/bin/python scripts/voice/gen.py /tmp/voice-texts.json <model dir> public/voice
+```
+
+Setup steps are at the top of `scripts/voice/gen.py`. A test fails if any line is missing a recording.
+
+## Music
+
+All music is original and synthesised live in the app: a game-show theme on the title and setup screens, a "here we go" fanfare when a game starts, and adaptive music during questions that speeds up as the timer runs down.
 
 ## Game options
 

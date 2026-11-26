@@ -10,7 +10,7 @@ import { pictureHtml, startReveal } from './picture';
 // ---------------- Lobby ----------------
 
 /** The TV's lobby: room code, QR code and who's on which team. Resolves when the host taps Start. */
-export function showLobby(host: PartyHost): { started: Promise<'start' | 'back'>; refresh: () => void } {
+export function showLobby(host: PartyHost, hostName: string): { started: Promise<'start' | 'back'>; refresh: () => void } {
   const url = joinUrl(host.code);
   const el = mount(
     `<div class="lobby">
@@ -23,7 +23,10 @@ export function showLobby(host: PartyHost): { started: Promise<'start' | 'back'>
            <div class="room-code">${host.code.split('').map((c) => `<span>${c}</span>`).join('')}</div>
          </div>
        </div>
-       <div class="lobby-teams" data-teams></div>
+       <div class="lobby-right">
+         <div class="lobby-teams" data-teams></div>
+         <button class="btn ghost play-too" data-local>🙋 I'M PLAYING TOO</button>
+       </div>
      </div>
      <footer class="foot two">
        <button class="btn ghost" data-back>BACK</button>
@@ -39,6 +42,18 @@ export function showLobby(host: PartyHost): { started: Promise<'start' | 'back'>
 
   const teamsEl = el.querySelector<HTMLElement>('[data-teams]')!;
   const startBtn = el.querySelector<HTMLButtonElement>('[data-start]')!;
+  const localBtn = el.querySelector<HTMLButtonElement>('[data-local]')!;
+  press(localBtn, () => {
+    if (host.localPlayer) host.removeLocal();
+    else host.addLocal(hostName);
+  });
+  teamsEl.addEventListener('click', (e) => {
+    const card = (e.target as HTMLElement).closest<HTMLElement>('.team-card[data-team]');
+    if (card && host.localPlayer && host.mode === 'teams') {
+      sound.click();
+      host.moveLocal(card.dataset.team!);
+    }
+  });
   let known = 0;
   const refresh = () => {
     const teams = host.publicTeams();
@@ -48,17 +63,24 @@ export function showLobby(host: PartyHost): { started: Promise<'start' | 'back'>
     teamsEl.innerHTML = teams.length
       ? teams
           .map(
-            (t) => `<div class="team-card" style="--c:${t.color}">
+            (t) => `<div class="team-card${host.localPlayer && host.mode === 'teams' ? ' pickable' : ''}" data-team="${t.id}" style="--c:${t.color}">
               <div class="team-name">${esc(t.name)}</div>
               <div class="members">${
                 t.members.length
-                  ? t.members.map((m) => `<span class="member ${m.online ? '' : 'away'}">${esc(m.name)}</span>`).join('')
+                  ? t.members.map((m) => `<span class="member ${m.online ? '' : 'away'} ${m.id === host.localPlayer?.id ? 'me' : ''}">${m.id === host.localPlayer?.id ? '📺 ' : ''}${esc(m.name)}</span>`).join('')
                   : '<span class="empty">Waiting for players…</span>'
               }</div>
             </div>`,
           )
           .join('')
       : '<div class="lobby-empty">Players will appear here as they join.</div>';
+    const me = host.localPlayer;
+    localBtn.textContent = me ? `✓ ${me.name.toUpperCase()} IS PLAYING · TAP TO STOP` : "🙋 I'M PLAYING TOO";
+    localBtn.classList.toggle('on', !!me);
+    const hintEl = el.querySelector('.pick-hint');
+    if (me && host.mode === 'teams') {
+      if (!hintEl) localBtn.insertAdjacentHTML('afterend', '<p class="pick-hint hint">Tap a team to move yourself.</p>');
+    } else hintEl?.remove();
     startBtn.disabled = total === 0;
     startBtn.textContent = total === 0 ? 'WAITING FOR PLAYERS' : `START GAME · ${total} PLAYER${total === 1 ? '' : 'S'}`;
   };
@@ -78,6 +100,13 @@ export interface TvQuestionHooks {
   onTick: (urgency: number) => void;
   /** Checked every frame: end the question early once every team has answered. */
   allAnswered: () => boolean;
+  /** Set when the host is playing along: answers on the host screen are sent here. */
+  local?: {
+    name: string;
+    hintsLeft: number;
+    onPick: (choice: number) => void;
+    onHint: () => number[] | null;
+  };
 }
 
 const LETTERS = ['A', 'B', 'C', 'D'];
@@ -100,7 +129,9 @@ export function tvQuestion(
   teams: readonly TeamScore[],
   info: { number: number; total: number; multiplier: number },
   hooks: TvQuestionHooks,
-): { done: Promise<void>; setLocked: (teamId: string, locked: boolean) => void } {
+): { done: Promise<void>; setLocked: (teamId: string, locked: boolean) => void; hide: (idx: number[]) => void } {
+  const local = hooks.local;
+  const tag = local ? 'button' : 'div';
   const el = mount(
     `<header class="hud tv-hud">
        ${scoreStrip(teams)}
@@ -114,10 +145,16 @@ export function tvQuestion(
        <div class="answers">${q.choices
          .map(
            (c, i) =>
-             `<div class="ans" data-i="${i}" style="--d:${i * 70}ms"><span class="letter">${LETTERS[i]}</span><span class="txt">${esc(c)}</span><span class="badges"></span></div>`,
+             `<${tag} class="ans" data-i="${i}" style="--d:${i * 70}ms"${local && i === 0 ? ' data-focus' : ''}><span class="letter">${LETTERS[i]}</span><span class="txt">${esc(c)}</span><span class="badges"></span></${tag}>`,
          )
          .join('')}</div>
-       <p class="tv-hint">Answer on your phone!</p>
+       ${
+         local
+           ? `<div class="tv-local"><span class="tv-hint">${esc(local.name)}, tap your answer!</span>${
+               local.hintsLeft > 0 ? `<button class="hint-btn" data-hint>💡 50/50 <span>${local.hintsLeft} left</span></button>` : ''
+             }</div>`
+           : '<p class="tv-hint">Answer on your phone!</p>'
+       }
      </div>`,
     'question party-q',
   );
@@ -126,6 +163,45 @@ export function tvQuestion(
   const prog = el.querySelector<SVGCircleElement>('.prog')!;
   const secs = el.querySelector<HTMLElement>('[data-secs]')!;
   const timerEl = el.querySelector<HTMLElement>('.timer')!;
+
+  let closed = false;
+  const hide = (idx: number[]) => {
+    for (const i of idx) {
+      const b = el.querySelector<HTMLElement>(`.ans[data-i="${i}"]`);
+      b?.classList.add('gone');
+      if (b instanceof HTMLButtonElement) b.disabled = true;
+    }
+  };
+  let onKey: ((e: KeyboardEvent) => void) | null = null;
+  if (local) {
+    const pick = (i: number) => {
+      const b = el.querySelector<HTMLButtonElement>(`.ans[data-i="${i}"]`);
+      if (closed || !b || b.disabled) return;
+      el.querySelectorAll('.ans.picked').forEach((x) => x.classList.remove('picked'));
+      b.classList.add('picked');
+      sound.click();
+      local.onPick(i);
+    };
+    el.querySelectorAll<HTMLButtonElement>('.ans').forEach((b) => b.addEventListener('click', () => pick(Number(b.dataset.i))));
+    const hintBtn = el.querySelector<HTMLButtonElement>('[data-hint]');
+    const hint = () => {
+      if (closed || !hintBtn || hintBtn.disabled) return;
+      const hidden = local.onHint();
+      hintBtn.disabled = true;
+      if (hidden) {
+        sound.hint();
+        hide(hidden);
+      }
+    };
+    hintBtn?.addEventListener('click', hint);
+    onKey = (e: KeyboardEvent) => {
+      const k = e.key.toLowerCase();
+      const idx = '1234'.indexOf(k) >= 0 ? '1234'.indexOf(k) : 'abcd'.indexOf(k);
+      if (idx >= 0 && idx < q.choices.length) pick(idx);
+      else if (k === 'h') hint();
+    };
+    window.addEventListener('keydown', onKey);
+  }
 
   const setLocked = (teamId: string, locked: boolean) => {
     const chip = el.querySelector(`[data-team="${teamId}"]`);
@@ -154,6 +230,9 @@ export function tvQuestion(
       if (left <= 0 || (now > start && hooks.allAnswered())) {
         hooks.onTension(0);
         pic?.finish();
+        closed = true;
+        if (onKey) window.removeEventListener('keydown', onKey);
+        el.querySelectorAll<HTMLButtonElement>('button.ans, [data-hint]').forEach((b) => (b.disabled = true));
         resolve();
         return;
       }
@@ -161,7 +240,7 @@ export function tvQuestion(
     };
     requestAnimationFrame(loop);
   });
-  return { done, setLocked };
+  return { done, setLocked, hide };
 }
 
 /** Reveals the answer on the TV, with each team's pick and points. */
@@ -184,6 +263,7 @@ export async function tvReveal(results: AnswerResult[], teams: readonly TeamScor
     if (!r.correct) buttons[r.chosen].classList.replace('dim', 'wrong-soft');
   }
   el.querySelector('.tv-hint')?.remove();
+  el.querySelector('.tv-local')?.remove();
 
   const winners = results.filter((r) => r.correct);
   const pop = document.createElement('div');
@@ -210,7 +290,7 @@ export async function tvScores(before: Map<string, number>, standings: readonly 
            (t, i) => `<div class="board-row" style="--c:${t.color}; --d:${i * 90}ms">
              <span class="rank">${i + 1}</span>
              <span class="bname">${esc(t.name)}</span>
-             <span class="bar"><i style="width:${((before.get(t.id) ?? 0) / max) * 100}%" data-w="${(t.score / max) * 100}%"></i></span>
+             <span class="score-bar"><i style="width:${((before.get(t.id) ?? 0) / max) * 100}%" data-w="${(t.score / max) * 100}%"></i></span>
              <span class="bscore" data-from="${before.get(t.id) ?? 0}" data-to="${t.score}">${(before.get(t.id) ?? 0).toLocaleString()}</span>
            </div>`,
          )
@@ -219,7 +299,7 @@ export async function tvScores(before: Map<string, number>, standings: readonly 
     'board-screen',
   );
   await wait(300);
-  el.querySelectorAll<HTMLElement>('.bar i').forEach((b) => (b.style.width = b.dataset.w!));
+  el.querySelectorAll<HTMLElement>('.score-bar i').forEach((b) => (b.style.width = b.dataset.w!));
   el.querySelectorAll<HTMLElement>('.bscore').forEach((s, i) =>
     void countUp(s, Number(s.dataset.from), Number(s.dataset.to), 900, i === 0 ? () => sound.points() : undefined),
   );

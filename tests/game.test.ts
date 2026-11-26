@@ -282,3 +282,56 @@ describe('name that tune', async () => {
     expect(BANK.filter((q) => q.category === 'tunes').length).toBeGreaterThanOrEqual(40);
   });
 });
+
+describe('host playing along', async () => {
+  const { PartyHost } = await import('../src/net/host');
+
+  it('adds the host as a player who can vote and move team', () => {
+    const host = new PartyHost();
+    host.mode = 'teams';
+    host.teams = [
+      { id: 't1', name: 'A', color: '#f00' },
+      { id: 't2', name: 'B', color: '#0f0' },
+    ];
+    const me = host.addLocal('Craig')!;
+    expect(me.local).toBe(true);
+    expect(host.publicTeams().flatMap((t) => t.members)).toEqual([{ id: me.id, name: 'Craig', online: true }]);
+    host.moveLocal('t2');
+    expect(host.localPlayer!.teamId).toBe('t2');
+
+    host.locked = true;
+    host.teams = host.activeTeams();
+    host.openQuestion(1, 10000);
+    expect(host.allVoted()).toBe(false);
+    host.localVote(2);
+    expect(host.votesFor('t2').map((v) => v.choice)).toEqual([2]);
+    expect(host.allVoted()).toBe(true);
+  });
+
+  it('gives the host their own entry in solo-players mode and can remove it', () => {
+    const host = new PartyHost();
+    host.mode = 'players';
+    const me = host.addLocal('  ')!;
+    expect(me.name).toBe('Host');
+    expect(host.teams.map((t) => t.name)).toEqual(['Host']);
+    host.removeLocal();
+    expect(host.teams).toEqual([]);
+    expect(host.localPlayer).toBeUndefined();
+  });
+});
+
+describe('recorded host voice', async () => {
+  const { allVoiceTexts, clipId, lineVariants } = await import('../src/audio/voiceTexts');
+  const { readFileSync } = await import('node:fs');
+  const clips = new Set<string>(JSON.parse(readFileSync('public/voice/index.json', 'utf8')));
+
+  it('has a recording for every line and question', () => {
+    const missing = allVoiceTexts().filter((t) => !clips.has(clipId(t)));
+    expect(missing.slice(0, 5)).toEqual([]);
+  });
+
+  it('records named lines for every category and team', () => {
+    expect(lineVariants('category').some((t) => t.includes('Name That Tune'))).toBe(true);
+    expect(lineVariants('winner').some((t) => t.includes('Neon Ninjas'))).toBe(true);
+  });
+});
