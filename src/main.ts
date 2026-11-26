@@ -22,6 +22,10 @@ import { addGame, gameRecord, loadHall, saveHall, topScores, emptyHall } from '.
 import { awardsHtml, showHall } from './ui/hall';
 import { dailyConfig, dailySeed, dailyStreak, dateKey, shareText, todaysDaily } from './game/daily';
 import { mulberry32 } from './game/session';
+import { customBankQuestions, loadPacks } from './game/custom';
+
+/** The built-in questions plus any the players wrote themselves. */
+const fullBank = () => [...BANK, ...customBankQuestions(loadPacks())];
 import { initHome, setHome } from './ui/home';
 
 const settings = loadSettings();
@@ -45,7 +49,7 @@ async function playGame(config: GameConfig, daily = false): Promise<'again' | 's
   const today = new Date();
   const key = dateKey(today);
   // The daily challenge deals the same questions to everyone today.
-  const session = daily ? new GameSession(config, BANK, mulberry32(dailySeed(key))) : new GameSession(config, BANK);
+  const session = daily ? new GameSession(config, BANK, mulberry32(dailySeed(key))) : new GameSession(config, fullBank());
   const alreadyPlayed = daily ? todaysDaily(loadHall(), today) : null;
   setHome({ mode: 'confirm', title: 'Quit this game?', detail: 'Your score so far will be lost.' });
   stage.wheel.build(config.categories.map(getCategory));
@@ -247,7 +251,7 @@ async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<voi
     // Lock the line-up: only teams with players take part; late joiners slot into those teams.
     host.locked = true;
     host.teams = host.activeTeams();
-    const session = new GameSession(config, BANK, Math.random, host.teams);
+    const session = new GameSession(config, fullBank(), Math.random, host.teams);
     host.bindScores(() => session.teams);
     let tvNow: ReturnType<typeof party.tvQuestion> | null = null;
     host.events = {

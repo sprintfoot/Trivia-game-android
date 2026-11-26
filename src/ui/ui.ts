@@ -8,6 +8,8 @@ import logoMarkUrl from '../assets/logo-mark.svg?url';
 import { isMatch } from '../game/match';
 import { avatarHtml, react, wrongReaction } from './avatarFx';
 import { isTyped, parseGuess } from '../game/session';
+import { customCount, loadPacks } from '../game/custom';
+import { openPackEditor } from './packs';
 
 const root = document.getElementById('ui')!;
 const flashEl = document.getElementById('flash')!;
@@ -158,7 +160,7 @@ export function showSetup(settings: Settings, onSettings: () => void, party = fa
   const season = seasonalPack(new Date());
   const chip = (c: Category) =>
     `<button class="chip ${chosen.has(c.id) ? 'on' : ''} ${c.id === season ? 'seasonal' : ''}" data-cat="${c.id}" style="--c:${c.color}">
-       <span class="ico">${c.icon}</span>${esc(c.name)}${c.id === season ? '<em>✨ In season</em>' : ''}</button>`;
+       <span class="ico">${c.icon}</span>${esc(c.name)}${c.id === season ? '<em>✨ In season</em>' : ''}${c.id === 'custom' ? '<small data-custom-count></small>' : ''}</button>`;
   const el = mount(
     `<header class="bar"><h2>Game setup</h2><button class="icon-btn" aria-label="Settings" data-settings>⚙️</button></header>
      <div class="scroll setup-cols">
@@ -166,7 +168,7 @@ export function showSetup(settings: Settings, onSettings: () => void, party = fa
        ${party ? `<h3>Play as</h3>${segmented('teams', TEAM_OPTIONS, vals.teams, (o) => (o === 0 ? 'Solo players' : `${o} teams`))}` : ''}
        <h3>Categories <span class="count" data-count></span><button class="link" data-all>All</button></h3>
        <div class="chips">${CATEGORIES.filter((c) => !PACK_CATEGORIES.includes(c.id)).map(chip).join('')}</div>
-       <h3>Local &amp; holiday packs</h3>
+       <h3>Local &amp; holiday packs <button class="link" data-edit-packs>✏️ Write your own</button></h3>
        <div class="chips">${CATEGORIES.filter((c) => PACK_CATEGORIES.includes(c.id))
          .sort((a, b) => Number(b.id === season) - Number(a.id === season))
          .map(chip)
@@ -204,9 +206,25 @@ export function showSetup(settings: Settings, onSettings: () => void, party = fa
   };
 
   el.querySelector('[data-settings]')!.addEventListener('click', onSettings);
+  // My Questions: only playable once there's at least one question switched on.
+  let customs = customCount(loadPacks());
+  const refreshCustom = () => {
+    customs = customCount(loadPacks());
+    if (customs === 0) chosen.delete('custom');
+    const c = el.querySelector<HTMLElement>('[data-custom-count]');
+    if (c) c.textContent = customs ? ` · ${customs}` : ' · tap to write';
+    refresh();
+  };
+  const editPacks = () => openPackEditor(refreshCustom);
+  el.querySelector('[data-edit-packs]')!.addEventListener('click', editPacks);
   el.querySelectorAll<HTMLElement>('[data-cat]').forEach((b) =>
     b.addEventListener('click', () => {
       const id = b.dataset.cat as CategoryId;
+      if (id === 'custom' && customs === 0) {
+        sound.click();
+        editPacks();
+        return;
+      }
       if (chosen.has(id)) chosen.delete(id);
       else chosen.add(id);
       sound.toggle(chosen.has(id));
@@ -215,9 +233,9 @@ export function showSetup(settings: Settings, onSettings: () => void, party = fa
     }),
   );
   press(el.querySelector('[data-all]')!, () => {
-    const all = chosen.size === CATEGORIES.length;
+    const all = chosen.size === CATEGORIES.filter((c) => c.id !== 'custom' || customs > 0).length;
     chosen.clear();
-    if (!all) CATEGORIES.forEach((c) => chosen.add(c.id));
+    if (!all) CATEGORIES.forEach((c) => (c.id !== 'custom' || customs > 0) && chosen.add(c.id));
     refresh();
   });
   el.querySelectorAll<HTMLElement>('[data-seg]').forEach((seg) => {
@@ -240,7 +258,7 @@ export function showSetup(settings: Settings, onSettings: () => void, party = fa
       sound.toggle(specials[key]);
     }),
   );
-  refresh();
+  refreshCustom();
 
   return new Promise((resolve) => {
     press(startBtn, () => {

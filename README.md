@@ -97,6 +97,16 @@ The **Who Am I?** category (40 famous people: painters, musicians, composers, ac
 
 The **Staten Island** category (35 questions) covers the ferry, the bridges, neighborhoods, landmarks, history, food, sports and famous Staten Islanders. Facts were checked against public sources. It's off by default, so tick it in setup.
 
+## My Questions (write your own)
+
+In setup, tap **✏️ Write your own** (or the **📝 My Questions** chip) to make packs of your own questions: family inside jokes, a birthday quiz, anything. Each question needs a right answer and one to three wrong ones. You can also paste many at once, one per line:
+
+```
+Who makes the best lasagna? | Aunt Rosa | Uncle Joe | Cousin Vinny | Grandma
+```
+
+**Copy pack** puts the pack on the clipboard in that same format, so someone else can paste it into their game. Packs are saved on the device and can be switched on and off. Tick **My Questions** in setup to play them; they work in solo and party games for every age group.
+
 ## Holiday packs
 
 Six packs of about 15 questions each: 🎄 Christmas, 🎃 Halloween, 🦃 Thanksgiving, 💘 Valentine's Day, 🎆 Fourth of July and 🎉 New Year's. They're listed in setup under **Local & holiday packs** with Staten Island, and the pack for the current season is marked "In season" at the front.

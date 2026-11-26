@@ -30,7 +30,8 @@ export type CategoryId =
   | 'thanksgiving'
   | 'valentines'
   | 'july4'
-  | 'newyear';
+  | 'newyear'
+  | 'custom';
 
 export interface Category {
   id: CategoryId;
@@ -55,6 +56,7 @@ export const CATEGORIES: readonly Category[] = [
   { id: 'valentines', name: "Valentine's Day", icon: '💘', color: '#ff5c9a' },
   { id: 'july4', name: 'Fourth of July', icon: '🎆', color: '#4d8dff' },
   { id: 'newyear', name: "New Year's", icon: '🎉', color: '#ffd84d' },
+  { id: 'custom', name: 'My Questions', icon: '📝', color: '#9be15d' },
   { id: 'screen', name: 'Movies', icon: '🎬', color: '#ff4fa3' },
   { id: 'disney', name: 'Disney & Pixar', icon: '🏰', color: '#5ab4ff' },
   { id: 'tv', name: 'TV Shows', icon: '📺', color: '#ff7ad9' },
@@ -97,4 +99,4 @@ export function seasonalPack(d: Date): CategoryId | null {
 }
 
 /** Special packs listed under their own heading in setup. */
-export const PACK_CATEGORIES: readonly CategoryId[] = ['statenisland', 'christmas', 'halloween', 'thanksgiving', 'valentines', 'july4', 'newyear'];
+export const PACK_CATEGORIES: readonly CategoryId[] = ['custom', 'statenisland', 'christmas', 'halloween', 'thanksgiving', 'valentines', 'july4', 'newyear'];
