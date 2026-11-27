@@ -113,7 +113,7 @@ Six packs of about 15 questions each: 🎄 Christmas, 🎃 Halloween, 🦃 Thank
 
 ## Famous Faces
 
-The **📸 Famous Faces** category shows a photo of a famous musician, actor, athlete or icon (or a famous painting) that starts as big blocks and gets clearer. Answer early for more points. Every image is public domain or Creative Commons licensed, from Wikimedia Commons. The photographer and license appear under the picture once the answer is revealed, and the full list with links is in [public/faces/CREDITS.md](public/faces/CREDITS.md). Real people are never hit by the tomato or bop effects.
+The **📸 Famous Faces** category shows a photo of a famous musician, actor, athlete or icon (or a famous painting) that starts as big blocks and gets clearer. The clock is shorter on these (60% of the normal time, at least 7 seconds), so answer early for more points. Every image is public domain or Creative Commons licensed, from Wikimedia Commons. The photographer and license appear under the picture once the answer is revealed, and the full list with links is in [public/faces/CREDITS.md](public/faces/CREDITS.md). Real people are never hit by the tomato or bop effects.
 
 ## Name That Tune
 
