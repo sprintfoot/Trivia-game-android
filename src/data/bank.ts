@@ -7,6 +7,7 @@ import { buildWhoAmIQuestions } from './whoami';
 import { buildFaceQuestions } from './faces';
 import { buildStatenIslandQuestions } from './statenIsland';
 import { buildHolidayPackQuestions } from './holidayPacks';
+import { buildHardQuestions } from './hard';
 import type { BankQuestion } from '../game/session';
 
 /** Every question in the game: the text bank plus generated picture and tune rounds. */
@@ -20,4 +21,5 @@ export const BANK: readonly BankQuestion[] = [
   ...buildFaceQuestions(),
   ...buildStatenIslandQuestions(),
   ...buildHolidayPackQuestions(),
+  ...buildHardQuestions(),
 ];

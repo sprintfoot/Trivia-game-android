@@ -40,7 +40,7 @@ describe('question bank', () => {
         expect(q.answer).toBeGreaterThanOrEqual(0);
         expect(q.answer).toBeLessThan(4);
       }
-      expect(['kids', 'teen', 'adult']).toContain(q.age);
+      expect(['kids', 'teen', 'adult', 'expert']).toContain(q.age);
       expect(CATEGORIES.some((c) => c.id === q.category)).toBe(true);
     }
     expect(BANK.length).toBeGreaterThanOrEqual(380);
@@ -692,6 +692,29 @@ describe('custom question packs', async () => {
     expect(q.prompt).toBe('Who is the tallest cousin?');
     expect([...q.choices].sort()).toEqual(['Ann', 'Lou', 'Mike']);
     expect(s.submit(q.choices.indexOf('Mike'), 5000).correct).toBe(true);
+  });
+});
+
+describe('experts level', () => {
+  it('deals only adult and expert questions, mostly hard ones', () => {
+    const s = new GameSession(config({ categories: ['science', 'history', 'geography'], rounds: 3, questionsPerRound: 5, ageGroup: 'expert' }), BANK, mulberry32(8));
+    let hard = 0;
+    while (s.hasNextRound()) {
+      s.startRound();
+      while (s.hasNextQuestion()) {
+        const q = s.nextQuestion();
+        expect(['adult', 'expert']).toContain(q.age);
+        if (q.age === 'expert') hard += 1;
+        s.submit(q.answer, 1000);
+      }
+    }
+    expect(hard).toBeGreaterThanOrEqual(10);
+  });
+
+  it('has hard questions in every main topic', () => {
+    for (const c of ['general', 'screen', 'disney', 'tv', 'music', 'pop', 'heroes', 'animals', 'sports', 'food', 'science', 'space', 'history', 'geography', 'brands', 'decades', 'tech']) {
+      expect(BANK.filter((q) => q.category === c && q.age === 'expert').length).toBeGreaterThanOrEqual(8);
+    }
   });
 });
 

@@ -165,7 +165,7 @@ Tap 🏠 in the top-left corner (or press Back or Escape) to return to the title
 
 - **Mix categories** (on by default): every round mixes your chosen categories one question at a time, so a picture can follow a tune and then a trivia question. Turn it off to spin the wheel for one category per round instead.
 - Pick any mix of categories, 2–6 rounds, 3/5/7/10 questions per round, and a 10–30 second timer.
-- **Most players are:** Kids (6–10), Teens (11–15) or Adults. Kids only get kid-friendly questions; teens never get adult ones.
+- **Most players are:** Kids (6–10), Teens (11–15), Adults, or Experts. Kids only get kid-friendly questions; teens never get adult ones. Experts (16 and up) get only the hardest questions: 160 extra-tough ones across the main topics, plus the adult ones.
 - **50/50 hints:** Off, 1, 3 or 5 per game. A hint removes two wrong answers but halves that question's points.
 
 ## Run it
