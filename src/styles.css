@@ -3115,9 +3115,10 @@ body.going-home #stage {
   padding: 6px;
 }
 .pic-photo canvas {
-  height: min(30vh, 300px);
   width: auto;
-  aspect-ratio: 300 / 360;
+  height: auto;
+  max-width: 100%;
+  max-height: min(30vh, 300px);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.06);
 }
@@ -3134,6 +3135,6 @@ body.going-home #stage {
 }
 @media (orientation: portrait) {
   .pic-photo canvas {
-    height: min(22vh, 240px);
+    max-height: min(22vh, 240px);
   }
 }

@@ -27,7 +27,7 @@ export function pictureHtml(p: Picture): string {
     case 'pixel':
       return `<div class="pic pic-pixel"><canvas width="240" height="240"></canvas></div>`;
     case 'photo':
-      return `<div class="pic pic-photo"><canvas width="300" height="360"></canvas><img src="${import.meta.env.BASE_URL}faces/${p.id}.jpg" alt="" hidden/><small class="pic-credit">${escHtml(p.credit)}</small></div>`;
+      return `<div class="pic pic-photo"><canvas width="400" height="480"></canvas><img src="${import.meta.env.BASE_URL}faces/${p.id}.jpg" alt="" hidden/><small class="pic-credit">${escHtml(p.credit)}</small></div>`;
     case 'clues':
       return `<ol class="pic pic-clues">${p.clues.map((c, i) => `<li><b>${i + 1}</b><span>${escHtml(c)}</span></li>`).join('')}</ol>`;
     case 'tune':
@@ -214,6 +214,10 @@ function startTune(root: HTMLElement, id: string): { finish: () => void } {
 /** Draws an emoji at a low resolution, then blows it up with hard pixel edges. */
 /** Draws the photo cropped to fill the canvas (keeping the top, where faces are), at res blocks across. */
 function drawPhoto(canvas: HTMLCanvasElement, img: HTMLImageElement, res: number): void {
+  // Follow the picture's shape (a wide painting stays wide), within limits so faces still crop well.
+  const ratio = Math.min(1.25, Math.max(0.45, img.naturalHeight / img.naturalWidth));
+  const fitH = Math.round(canvas.width * ratio);
+  if (canvas.height !== fitH) canvas.height = fitH;
   const { width: W, height: H } = canvas;
   const scale = Math.max(W / img.naturalWidth, H / img.naturalHeight);
   const sw = W / scale;

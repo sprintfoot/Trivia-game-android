@@ -20,3 +20,13 @@ Images were resized for the game. Each is used under the license shown; follow t
 | elton-john.jpg | [File:Elton John 2011 Shankbone 2 (cropped).JPG](https://commons.wikimedia.org/wiki/File:Elton_John_2011_Shankbone_2_(cropped).JPG) | David Shankbone | CC BY 3.0 |
 | stevie-wonder.jpg | [File:Stevie Wonder 1975 (cropped).jpg](https://commons.wikimedia.org/wiki/File:Stevie_Wonder_1975_(cropped).jpg) | UCLA digital library | CC BY 4.0 |
 | dwayne-johnson.jpg | [File:Dwayne Johnson Hercules 2014 (cropped).jpg](https://commons.wikimedia.org/wiki/File:Dwayne_Johnson_Hercules_2014_(cropped).jpg) | Eva Rinaldi | CC BY-SA 2.0 |
+| mona-lisa.jpg | [File:Mona Lisa, by Leonardo da Vinci, from C2RMF retouched.jpg](https://commons.wikimedia.org/wiki/File:Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg) | Leonardo da Vinci | Public domain |
+| starry-night.jpg | [File:Van Gogh - Starry Night - Google Art Project.jpg](https://commons.wikimedia.org/wiki/File:Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg) | Vincent van Gogh | Public domain |
+| the-scream.jpg | [File:Edvard Munch, 1893, The Scream, oil, tempera and pastel on cardboard, 91 x 73 cm, National Gallery of Norway.jpg](https://commons.wikimedia.org/wiki/File:Edvard_Munch,_1893,_The_Scream,_oil,_tempera_and_pastel_on_cardboard,_91_x_73_cm,_National_Gallery_of_Norway.jpg) | Edvard Munch | Public domain |
+| pearl-earring.jpg | [File:1665 Girl with a Pearl Earring.jpg](https://commons.wikimedia.org/wiki/File:1665_Girl_with_a_Pearl_Earring.jpg) | Johannes Vermeer | Public domain |
+| great-wave.jpg | [File:Tsunami by hokusai 19th century.jpg](https://commons.wikimedia.org/wiki/File:Tsunami_by_hokusai_19th_century.jpg) | Katsushika Hokusai | Public domain |
+| american-gothic.jpg | [File:Grant Wood - American Gothic - Google Art Project.jpg](https://commons.wikimedia.org/wiki/File:Grant_Wood_-_American_Gothic_-_Google_Art_Project.jpg) | Grant Wood | Public domain |
+| creation-of-adam.jpg | [File:Michelangelo - Creation of Adam (cropped).jpg](https://commons.wikimedia.org/wiki/File:Michelangelo_-_Creation_of_Adam_(cropped).jpg) | Michelangelo | Public domain |
+| water-lilies.jpg | [File:Claude Monet - Water Lilies - 1906, Ryerson.jpg](https://commons.wikimedia.org/wiki/File:Claude_Monet_-_Water_Lilies_-_1906,_Ryerson.jpg) | Claude Monet | Public domain |
+| sunflowers.jpg | [File:Vincent Willem van Gogh 127.jpg](https://commons.wikimedia.org/wiki/File:Vincent_Willem_van_Gogh_127.jpg) | Vincent van Gogh | Public domain |
+| night-watch.jpg | [File:The Night Watch - HD.jpg](https://commons.wikimedia.org/wiki/File:The_Night_Watch_-_HD.jpg) | Rembrandt | Public domain |
