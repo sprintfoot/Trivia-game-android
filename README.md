@@ -111,6 +111,10 @@ Who makes the best lasagna? | Aunt Rosa | Uncle Joe | Cousin Vinny | Grandma
 
 Six packs of about 15 questions each: 🎄 Christmas, 🎃 Halloween, 🦃 Thanksgiving, 💘 Valentine's Day, 🎆 Fourth of July and 🎉 New Year's. They're listed in setup under **Local & holiday packs** with Staten Island, and the pack for the current season is marked "In season" at the front.
 
+## Famous Faces
+
+The **📸 Famous Faces** category shows a photo of a famous musician, actor, athlete or icon (or a famous painting) that starts as big blocks and gets clearer. Answer early for more points. Every image is public domain or Creative Commons licensed, from Wikimedia Commons. The photographer and license appear under the picture once the answer is revealed, and the full list with links is in [public/faces/CREDITS.md](public/faces/CREDITS.md). Real people are never hit by the tomato or bop effects.
+
 ## Name That Tune
 
 The **Name That Tune** category plays a melody and you pick its title. The tune plays a bit at a

@@ -143,7 +143,7 @@ describe('GameSession', () => {
 
 describe('picture questions', () => {
   it('builds flag, emoji and zoom rounds with four distinct choices', () => {
-    const pics = BANK.filter((q) => q.picture && q.picture.kind !== 'tune' && q.picture.kind !== 'clues');
+    const pics = BANK.filter((q) => q.picture && q.picture.kind !== 'tune' && q.picture.kind !== 'clues' && q.picture.kind !== 'photo');
     expect(pics.length).toBeGreaterThanOrEqual(80);
     expect(new Set(pics.map((q) => q.picture!.kind))).toEqual(new Set(['flag', 'emoji', 'zoom', 'shadow', 'pixel']));
     for (const q of pics) {
@@ -614,7 +614,7 @@ describe('daily challenge', async () => {
       while (s.hasNextQuestion()) {
         const q = s.nextQuestion();
         ids.push(q.id);
-        s.submit(q.answer, 10000);
+        s.submit(q.answer, 10000, q.estimate?.value);
       }
     }
     return { s, ids };
@@ -692,5 +692,24 @@ describe('custom question packs', async () => {
     expect(q.prompt).toBe('Who is the tallest cousin?');
     expect([...q.choices].sort()).toEqual(['Ann', 'Lou', 'Mike']);
     expect(s.submit(q.choices.indexOf('Mike'), 5000).correct).toBe(true);
+  });
+});
+
+describe('famous faces', async () => {
+  const credits = (await import('../src/data/faceCredits.json')).default as Record<string, { license: string; title: string }>;
+  const fs = await import('node:fs');
+
+  it('only uses free-licensed images that are in the app, with a credit', () => {
+    const faces = BANK.filter((q) => q.category === 'faces');
+    expect(faces.length).toBeGreaterThanOrEqual(15);
+    for (const q of faces) {
+      expect(q.picture?.kind).toBe('photo');
+      if (q.picture?.kind !== 'photo') continue;
+      const c = credits[q.picture.id];
+      expect(c.license).toMatch(/^(public domain|pd|cc0|cc by(-sa)?( [0-9.]+)?)/i);
+      expect(q.picture.credit).toContain(c.license);
+      expect(fs.existsSync(`public/faces/${q.picture.id}.jpg`)).toBe(true);
+      expect(new Set(q.choices).size).toBe(4);
+    }
   });
 });

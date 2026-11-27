@@ -24,6 +24,7 @@ export type CategoryId =
   | 'teasers'
   | 'estimate'
   | 'whoami'
+  | 'faces'
   | 'statenisland'
   | 'christmas'
   | 'halloween'
@@ -49,6 +50,7 @@ export const CATEGORIES: readonly Category[] = [
   { id: 'teasers', name: 'Brain Teasers', icon: '🧩', color: '#ff9a4d' },
   { id: 'estimate', name: 'Closest Guess', icon: '🎯', color: '#ff5a6e' },
   { id: 'whoami', name: 'Who Am I?', icon: '🕵️', color: '#b48cff' },
+  { id: 'faces', name: 'Famous Faces', icon: '📸', color: '#ff7ab8' },
   { id: 'statenisland', name: 'Staten Island', icon: '⛴️', color: '#ff8a1f' },
   { id: 'christmas', name: 'Christmas', icon: '🎄', color: '#3ddc84' },
   { id: 'halloween', name: 'Halloween', icon: '🎃', color: '#ff8c1a' },
@@ -77,7 +79,7 @@ export const CATEGORIES: readonly Category[] = [
 ];
 
 /** Picked on first launch; players can change them on the setup screen. */
-export const DEFAULT_CATEGORIES: readonly CategoryId[] = ['general', 'pictures', 'tunes', 'blanks', 'truth', 'teasers', 'estimate', 'whoami', 'screen', 'disney', 'tv', 'music', 'animals', 'sports', 'food'];
+export const DEFAULT_CATEGORIES: readonly CategoryId[] = ['general', 'pictures', 'tunes', 'blanks', 'truth', 'teasers', 'estimate', 'whoami', 'faces', 'screen', 'disney', 'tv', 'music', 'animals', 'sports', 'food'];
 
 export function getCategory(id: CategoryId): Category {
   const c = CATEGORIES.find((x) => x.id === id);

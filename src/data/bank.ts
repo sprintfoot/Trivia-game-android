@@ -4,6 +4,7 @@ import { buildTuneQuestions } from './tunes';
 import { buildBlankQuestions } from './blanks';
 import { buildRoundQuestions } from './rounds';
 import { buildWhoAmIQuestions } from './whoami';
+import { buildFaceQuestions } from './faces';
 import { buildStatenIslandQuestions } from './statenIsland';
 import { buildHolidayPackQuestions } from './holidayPacks';
 import type { BankQuestion } from '../game/session';
@@ -16,6 +17,7 @@ export const BANK: readonly BankQuestion[] = [
   ...buildBlankQuestions(),
   ...buildRoundQuestions(),
   ...buildWhoAmIQuestions(),
+  ...buildFaceQuestions(),
   ...buildStatenIslandQuestions(),
   ...buildHolidayPackQuestions(),
 ];
