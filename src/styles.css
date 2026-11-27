@@ -649,6 +649,11 @@ button {
 }
 .results {
   margin: auto 0;
+  /* Never push the buttons off screen: the card scrolls if a game earns lots of awards. */
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   text-align: center;
   background: rgba(7, 6, 26, 0.6);
   border: 1px solid var(--glass-border);
@@ -2725,6 +2730,52 @@ body.going-home #stage {
 .ctl-awards .award {
   animation-delay: 0.3s;
 }
+/* On the results card: compact two-column chips, so even eight awards fit on a phone. */
+.results .awards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 12px;
+}
+.results .award {
+  padding: 4px 8px 4px 4px;
+  border-radius: 14px;
+  gap: 6px;
+  min-width: 0;
+}
+.results .aw-ico {
+  width: 28px;
+  height: 28px;
+  font-size: 16px;
+  flex: none;
+}
+.results .aw-txt {
+  min-width: 0;
+}
+.results .aw-txt b {
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.results .aw-txt span {
+  font-size: 10.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (max-height: 760px) {
+  .results {
+    padding: 16px 12px;
+  }
+  .r-score {
+    font-size: clamp(44px, 14vw, 72px);
+    margin: 4px 0;
+  }
+  .r-stats b {
+    font-size: 18px;
+  }
+}
 
 /* ---------- hall of fame ---------- */
 .btn.link {
@@ -3136,5 +3187,39 @@ body.going-home #stage {
 @media (orientation: portrait) {
   .pic-photo canvas {
     max-height: min(22vh, 240px);
+  }
+}
+
+/* Results on a phone held sideways: smaller headline numbers and four award columns. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .results {
+    padding: 10px 14px;
+  }
+  .results .r-title {
+    font-size: 26px;
+  }
+  .results .r-best {
+    margin-top: 2px;
+    padding: 3px 10px;
+    font-size: 11px;
+  }
+  .results .r-score {
+    font-size: 44px;
+    margin: 2px 0 6px;
+  }
+  .results .r-stats div {
+    padding: 4px 6px;
+  }
+  .results .r-stats b {
+    font-size: 16px;
+  }
+  .results .r-hof {
+    margin: 6px auto 0;
+    padding: 3px 12px;
+    font-size: 13px;
+  }
+  .results .awards {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-top: 8px;
   }
 }
