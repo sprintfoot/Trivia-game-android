@@ -1,11 +1,12 @@
 import type { CategoryId } from './categories';
 
-export type AgeGroup = 'kids' | 'teen' | 'adult';
+export type AgeGroup = 'kids' | 'teen' | 'adult' | 'expert';
 
 export const AGE_GROUPS: readonly { id: AgeGroup; label: string; detail: string }[] = [
   { id: 'kids', label: 'Kids', detail: 'Ages 6–10' },
   { id: 'teen', label: 'Teens', detail: 'Ages 11–15' },
   { id: 'adult', label: 'Adults', detail: '16 and up' },
+  { id: 'expert', label: 'Experts', detail: 'Hard, 16 and up' },
 ];
 
 /** Which question age levels each group may see. */
@@ -13,6 +14,8 @@ const ALLOWED: Record<AgeGroup, AgeGroup[]> = {
   kids: ['kids'],
   teen: ['kids', 'teen'],
   adult: ['kids', 'teen', 'adult'],
+  // Experts get only the hardest questions: expert ones, plus the adult ones.
+  expert: ['adult', 'expert'],
 };
 
 /** Fewer suitable questions than this in a category and we fall back to the whole category. */
