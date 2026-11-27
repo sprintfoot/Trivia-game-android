@@ -719,6 +719,20 @@ describe('experts level', () => {
 });
 
 describe('famous faces', async () => {
+  it('gives less time on a photo, and keeps it while the answer is scored', () => {
+    const s = new GameSession(config({ categories: ['faces'], rounds: 1, questionsPerRound: 3, timeLimitMs: 20000 }), BANK, mulberry32(4));
+    s.startRound();
+    const q = s.nextQuestion();
+    expect(q.picture?.kind).toBe('photo');
+    expect(s.timeLimitMs).toBe(12000);
+    const r = s.submit(q.answer, 6000);
+    expect(r.timeLimitMs).toBe(12000);
+    const normal = new GameSession(config({ timeLimitMs: 20000 }), BANK, mulberry32(4));
+    normal.startRound();
+    normal.nextQuestion();
+    expect(normal.timeLimitMs).toBe(20000);
+  });
+
   const credits = (await import('../src/data/faceCredits.json')).default as Record<string, { license: string; title: string }>;
   const fs = await import('node:fs');
 

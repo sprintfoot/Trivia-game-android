@@ -58,6 +58,9 @@ export type RoundKind = 'normal' | 'lightning' | 'wager';
 
 export const LIGHTNING = { questions: 5, timeMs: 8000 } as const;
 
+/** Famous Faces clock: 60% of the normal time, but never under 7 seconds or over the normal time. */
+export const photoTimeMs = (normalMs: number): number => Math.min(normalMs, Math.max(7000, Math.round(normalMs * 0.6)));
+
 /** Players type rather than pick, for these questions. */
 export function isTyped(q: Pick<BankQuestion, 'accept' | 'estimate'>): boolean {
   return !!q.accept || !!q.estimate;
@@ -178,6 +181,8 @@ export class GameSession {
   private questionInRound = 0;
   private questionCount = 0;
   private current: LiveQuestion | null = null;
+  /** The last question asked, so its time limit still holds while it is scored. */
+  private asked: LiveQuestion | null = null;
   private hidden = new Map<string, number[]>();
   private readonly pools = new Map<CategoryId, BankQuestion[]>();
   private readonly kinds: RoundKind[];
@@ -248,9 +253,12 @@ export class GameSession {
     return this.kinds[this.round] ?? null;
   }
 
-  /** Seconds on the clock for the current round's questions. */
+  /** Time on the clock for the current question. Famous Faces get less, since the photo keeps sharpening. */
   get timeLimitMs(): number {
-    return this.roundKind === 'lightning' ? LIGHTNING.timeMs : this.config.timeLimitMs;
+    if (this.roundKind === 'lightning') return LIGHTNING.timeMs;
+    const q = this.current ?? this.asked;
+    if (q?.picture?.kind === 'photo') return photoTimeMs(this.config.timeLimitMs);
+    return this.config.timeLimitMs;
   }
 
   private questionsIn(kind: RoundKind): number {
@@ -339,6 +347,7 @@ export class GameSession {
       number: this.questionCount,
       round: this.round,
     };
+    this.asked = this.current;
     return this.current;
   }
 
