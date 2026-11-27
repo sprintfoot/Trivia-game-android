@@ -30,3 +30,13 @@ Images were resized for the game. Each is used under the license shown; follow t
 | water-lilies.jpg | [File:Claude Monet - Water Lilies - 1906, Ryerson.jpg](https://commons.wikimedia.org/wiki/File:Claude_Monet_-_Water_Lilies_-_1906,_Ryerson.jpg) | Claude Monet | Public domain |
 | sunflowers.jpg | [File:Vincent Willem van Gogh 127.jpg](https://commons.wikimedia.org/wiki/File:Vincent_Willem_van_Gogh_127.jpg) | Vincent van Gogh | Public domain |
 | night-watch.jpg | [File:The Night Watch - HD.jpg](https://commons.wikimedia.org/wiki/File:The_Night_Watch_-_HD.jpg) | Rembrandt | Public domain |
+| marilyn-monroe.jpg | [File:Marilyn Monroe, Epoca (cropped).jpg](https://commons.wikimedia.org/wiki/File:Marilyn_Monroe,_Epoca_(cropped).jpg) | Unknown author | Public domain |
+| charlie-chaplin.jpg | [File:Charlie Chaplin (cropped).jpg](https://commons.wikimedia.org/wiki/File:Charlie_Chaplin_(cropped).jpg) | P.D Jankens | Public domain |
+| zendaya.jpg | [File:Zendaya 2013 (cropped).jpg](https://commons.wikimedia.org/wiki/File:Zendaya_2013_(cropped).jpg) | Lauren Alvarez/Neon Tommy | CC BY-SA 2.0 |
+| will-smith.jpg | [File:Will Smith 1993 (cropped).jpg](https://commons.wikimedia.org/wiki/File:Will_Smith_1993_(cropped).jpg) | Alan Light | CC BY 2.0 |
+| morgan-freeman.jpg | [File:Morgan Freeman, 2006 (cropped).jpg](https://commons.wikimedia.org/wiki/File:Morgan_Freeman,_2006_(cropped).jpg) | David Sifry | CC BY 2.0 |
+| leonardo-dicaprio.jpg | [File:Leonardo DiCaprio crop (cropped) (cropped).jpg](https://commons.wikimedia.org/wiki/File:Leonardo_DiCaprio_crop_(cropped)_(cropped).jpg) | Thore Siebrands | CC BY-SA 3.0 |
+| jennifer-lopez.jpg | [File:Jennifer Lopez at GLAAD Media Awards (cropped).jpg](https://commons.wikimedia.org/wiki/File:Jennifer_Lopez_at_GLAAD_Media_Awards_(cropped).jpg) | dvsross | CC BY 2.0 |
+| oprah-winfrey.jpg | [File:Oprah Winfrey cropped.jpg](https://commons.wikimedia.org/wiki/File:Oprah_Winfrey_cropped.jpg) | Malik Shabazz | CC BY 2.0 |
+| walt-disney.jpg | [File:Walt Disney 1946 (cropped).JPG](https://commons.wikimedia.org/wiki/File:Walt_Disney_1946_(cropped).JPG) | Boy Scouts of America | Public domain |
+| lucille-ball.jpg | [File:Lucille Ball cropped 1953.jpg](https://commons.wikimedia.org/wiki/File:Lucille_Ball_cropped_1953.jpg) | Los Angeles Times | CC BY 4.0 |

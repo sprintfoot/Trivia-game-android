@@ -148,5 +148,65 @@
   "license": "Public domain",
   "artist": "Rembrandt",
   "page": "https://commons.wikimedia.org/wiki/File:The_Night_Watch_-_HD.jpg"
+ },
+ "marilyn-monroe": {
+  "title": "File:Marilyn Monroe, Epoca (cropped).jpg",
+  "license": "Public domain",
+  "artist": "Unknown author",
+  "page": "https://commons.wikimedia.org/wiki/File:Marilyn_Monroe,_Epoca_(cropped).jpg"
+ },
+ "charlie-chaplin": {
+  "title": "File:Charlie Chaplin (cropped).jpg",
+  "license": "Public domain",
+  "artist": "P.D Jankens",
+  "page": "https://commons.wikimedia.org/wiki/File:Charlie_Chaplin_(cropped).jpg"
+ },
+ "zendaya": {
+  "title": "File:Zendaya 2013 (cropped).jpg",
+  "license": "CC BY-SA 2.0",
+  "artist": "Lauren Alvarez/Neon Tommy",
+  "page": "https://commons.wikimedia.org/wiki/File:Zendaya_2013_(cropped).jpg"
+ },
+ "will-smith": {
+  "title": "File:Will Smith 1993 (cropped).jpg",
+  "license": "CC BY 2.0",
+  "artist": "Alan Light",
+  "page": "https://commons.wikimedia.org/wiki/File:Will_Smith_1993_(cropped).jpg"
+ },
+ "morgan-freeman": {
+  "title": "File:Morgan Freeman, 2006 (cropped).jpg",
+  "license": "CC BY 2.0",
+  "artist": "David Sifry",
+  "page": "https://commons.wikimedia.org/wiki/File:Morgan_Freeman,_2006_(cropped).jpg"
+ },
+ "leonardo-dicaprio": {
+  "title": "File:Leonardo DiCaprio crop (cropped) (cropped).jpg",
+  "license": "CC BY-SA 3.0",
+  "artist": "Thore Siebrands",
+  "page": "https://commons.wikimedia.org/wiki/File:Leonardo_DiCaprio_crop_(cropped)_(cropped).jpg"
+ },
+ "jennifer-lopez": {
+  "title": "File:Jennifer Lopez at GLAAD Media Awards (cropped).jpg",
+  "license": "CC BY 2.0",
+  "artist": "dvsross",
+  "page": "https://commons.wikimedia.org/wiki/File:Jennifer_Lopez_at_GLAAD_Media_Awards_(cropped).jpg"
+ },
+ "oprah-winfrey": {
+  "title": "File:Oprah Winfrey cropped.jpg",
+  "license": "CC BY 2.0",
+  "artist": "Malik Shabazz",
+  "page": "https://commons.wikimedia.org/wiki/File:Oprah_Winfrey_cropped.jpg"
+ },
+ "walt-disney": {
+  "title": "File:Walt Disney 1946 (cropped).JPG",
+  "license": "Public domain",
+  "artist": "Boy Scouts of America",
+  "page": "https://commons.wikimedia.org/wiki/File:Walt_Disney_1946_(cropped).JPG"
+ },
+ "lucille-ball": {
+  "title": "File:Lucille Ball cropped 1953.jpg",
+  "license": "CC BY 4.0",
+  "artist": "Los Angeles Times",
+  "page": "https://commons.wikimedia.org/wiki/File:Lucille_Ball_cropped_1953.jpg"
  }
 }
