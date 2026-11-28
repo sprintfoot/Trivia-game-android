@@ -36,6 +36,8 @@ jobs:
 
       - name: Build debug APK
         working-directory: android
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
         run: ./gradlew assembleDebug --no-daemon
 
       # Published as a release download rather than a workflow artifact: releases are easy to
@@ -47,7 +49,7 @@ jobs:
           BUILD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           cp android/app/build/outputs/apk/debug/app-debug.apk trivia-party.apk
-          NOTES="Debug build from ${GITHUB_HEAD_REF:-$GITHUB_REF_NAME} at ${BUILD_SHA::7}. Download trivia-party.apk on your phone to install."
+          NOTES="Debug build ${{ github.run_number }} from ${GITHUB_HEAD_REF:-$GITHUB_REF_NAME} at ${BUILD_SHA::7}. Download trivia-party.apk on your phone to install."
           if gh release view latest-build >/dev/null 2>&1; then
             gh release upload latest-build trivia-party.apk --clobber
             gh release edit latest-build --notes "$NOTES"
