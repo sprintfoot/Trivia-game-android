@@ -13,6 +13,8 @@ import com.getcapacitor.BridgeActivity;
 public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        // App-local plugins must be registered before the bridge starts.
+        registerPlugin(BackupPlugin.class);
         super.onCreate(savedInstanceState);
         // Keep the screen on during play; a party game shouldn't dim mid-question.
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
