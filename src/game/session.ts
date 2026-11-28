@@ -222,7 +222,14 @@ export class GameSession {
       const suitable = all.filter((q) => allowed.includes(q.age ?? 'teen'));
       const questions = suitable.length >= MIN_POOL ? suitable : all;
       this.byCategory.set(id, questions);
-      this.pools.set(id, freshFirst(questions, avoid, rng));
+      const pool = freshFirst(questions, avoid, rng);
+      if (config.ageGroup === 'expert') {
+        // Experts are dealt the hard questions first, then the adult ones, still unseen ones before repeats.
+        const seen = new Set(avoid);
+        const rank = (q: BankQuestion) => (seen.has(q.id) ? 2 : 0) + (q.age === 'expert' ? 0 : 1);
+        pool.sort((x, y) => rank(x) - rank(y));
+      }
+      this.pools.set(id, pool);
     }
     this.kinds = Array<RoundKind>(config.rounds).fill('normal');
     if (config.lightning) this.kinds.splice(Math.max(0, config.rounds - 1), 0, 'lightning');
