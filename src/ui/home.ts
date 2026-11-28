@@ -69,7 +69,8 @@ function trapBack(): void {
   trapped = true;
 }
 
-function requestHome(): void {
+/** Same as tapping 🏠: asks first when the screen says to, then goes back to the start. */
+export function requestHome(): void {
   if (state.mode === 'hidden' || leaving) return;
   if (state.mode === 'free') goHome();
   else openDialog();

@@ -1575,6 +1575,13 @@ button:focus-visible {
 .ctl-wait {
   animation: glow 2s ease-in-out infinite;
 }
+.ctl-leave {
+  align-self: center;
+  margin-top: 8px;
+  font-size: 0.85rem;
+  padding: 10px 22px;
+  opacity: 0.85;
+}
 .ctl-teams {
   display: flex;
   flex-direction: column;

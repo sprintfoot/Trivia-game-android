@@ -9,7 +9,7 @@ import { haptics } from './audio/haptics';
 import { esc, mount, press, wagerButtons } from './ui/ui';
 import type { Settings } from './settings';
 import { saveSettings } from './settings';
-import { setHome } from './ui/home';
+import { requestHome, setHome } from './ui/home';
 import { AVATARS, avatarSvg, randomAvatar } from './game/avatars';
 import { avatarHtml, react, wrongReaction } from './ui/avatarFx';
 
@@ -78,6 +78,8 @@ export class Controller {
   private teams: PublicTeam[] = [];
   private qid = -1;
   private inGame = false;
+  /** Showing the "waiting for the host" screen. */
+  private waiting = false;
   private statusEl: HTMLElement;
 
   constructor(private readonly client: PartyClient) {
@@ -87,6 +89,13 @@ export class Controller {
     client.onStatus = (s) => {
       this.statusEl.textContent = s === 'reconnecting' ? 'Reconnecting…' : '';
       this.statusEl.classList.toggle('on', s === 'reconnecting');
+      // The host has been gone a while (between games, or the app restarted): say so, and stay joined.
+      if (s === 'reconnecting' && client.awayMs > 8000 && !this.waiting) {
+        this.inGame = false;
+        this.qid = -1;
+        this.holdScreen('Waiting for the host to open the next game. You will be back in by yourself.');
+      }
+      if (s === 'connected') this.waiting = false;
     };
     client.onMessage = (m) => this.handle(m);
     this.waitScreen('Connected!', 'Hang tight…');
@@ -106,7 +115,14 @@ export class Controller {
         this.teams = m.teams;
         this.teamId = m.you.teamId;
         this.playerId = m.you.playerId;
+        // open: the host is gathering players for a new game, so leave any old screen behind.
+        if (m.open) this.inGame = false;
         if (!this.inGame) this.lobby(m.mode);
+        break;
+      case 'hold':
+        this.inGame = false;
+        this.qid = -1;
+        this.holdScreen(m.text);
         break;
       case 'screen':
         this.inGame = true;
@@ -185,12 +201,30 @@ export class Controller {
              : `<p class="hint">Every player for themselves.</p>`
          }
          <p class="ctl-wait">Waiting for the host to start…</p>
+         ${LEAVE_BTN}
        </div>`,
       'ctl-screen',
     );
+    this.waiting = false;
+    wireLeave(el);
     el.querySelectorAll<HTMLElement>('[data-team]').forEach((b) =>
       press(b, () => this.client.send({ t: 'team', teamId: b.dataset.team! })),
     );
+  }
+
+  /** Between games: still joined, waiting for the host's next game. */
+  private holdScreen(text: string): void {
+    this.waiting = true;
+    const el = mount(
+      `<div class="ctl ctl-wait-screen" style="--c:#38e1ff">
+         <div class="ctl-big">You're still in! 👍</div>
+         <p class="ctl-sub">${esc(text)}</p>
+         <p class="ctl-sub">Stay on this screen. You'll join the next game without scanning again.</p>
+         ${LEAVE_BTN}
+       </div>`,
+      'ctl-screen',
+    );
+    wireLeave(el);
   }
 
   private waitScreen(title: string, text: string, color?: string): void {
@@ -354,7 +388,7 @@ export class Controller {
     const rank = sorted.findIndex((t) => t.id === this.teamId) + 1;
     if (rank === 1) sound.fanfare();
     const mine = awards.filter((a) => a.teamId === this.teamId);
-    mount(
+    const el = mount(
       `<div class="ctl">
          <div class="ctl-big">${rank === 1 ? 'YOU WIN! 🏆' : `${ordinal(rank)} place`}</div>
          <div class="ctl-standings">${sorted
@@ -369,13 +403,23 @@ export class Controller {
                  .join('')}</div>`
              : ''
          }
-         <p class="ctl-sub">Stay on this screen for a rematch.</p>
+         <p class="ctl-sub">Stay on this screen. You're in the next game too.</p>
+         ${LEAVE_BTN}
        </div>`,
       'ctl-screen',
     );
+    wireLeave(el);
     this.qid = -1;
     this.inGame = false;
   }
+}
+
+/** Leaving takes the same path as the 🏠 button: a quick "are you sure", then back to the start. */
+const LEAVE_BTN = '<button class="btn ghost ctl-leave" data-leave>LEAVE GAME</button>';
+
+function wireLeave(el: HTMLElement): void {
+  const btn = el.querySelector<HTMLElement>('[data-leave]');
+  if (btn) press(btn, () => requestHome());
 }
 
 function ordinal(n: number): string {
