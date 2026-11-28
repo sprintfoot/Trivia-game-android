@@ -8,7 +8,7 @@ Play solo on one phone, or host a party on a TV where everyone answers on their 
 
 - **3D neon game-show stage** (three.js): sweeping spotlights, light beams, neon arches, a scrolling grid floor, bloom glow, and a floating crystal that speeds up and turns red as time runs out.
 - **3D category wheel** that spins for each round, with chasing bulbs, peg ticks and a glowing winning segment.
-- **18 categories, 391 original questions** (`src/data/questions.json`): General Knowledge, Movies, Disney & Pixar, TV Shows, Music, Pop Stars, Superheroes, Animals, Sports, Food & Drink, Science, Space, History, Geography, Holidays, Brands, Throwback and Tech & Gaming. Each question is tagged kids/teen/adult, and there are no repeats until a category runs out.
+- **18 categories, about 1,970 original questions** (`src/data/questions.json`): General Knowledge, Movies, Disney & Pixar, TV Shows, Music, Pop Stars, Superheroes, Animals, Sports, Food & Drink, Science, Space, History, Geography, Holidays, Brands, Throwback and Tech & Gaming. Each question is tagged kids/teen/adult, and there are no repeats until a category runs out.
 - **Scoring**: 500 for a right answer, up to 500 more for speed, +100 per answer once you're on a 3+ streak, and double points in the final round. All numbers live in `src/game/scoring.ts`.
 - **Juice**: confetti and fireworks on correct answers, screen shake and buzzer on wrong ones, animated score count-ups and a results screen with personal best.
 - **Sound**: every effect and the music are synthesised live with the Web Audio API (`src/audio/sound.ts`), so they're all original and there's nothing to license. The music speeds up and adds drums as the timer runs down, and ducks under sound effects. Recorded samples can be layered in later with `sound.loadSample()`.
@@ -60,8 +60,8 @@ Type your name. In team games, tap the team you want to be on (you're placed on 
 
 ## Picture Reveal rounds
 
-The **Picture Reveal** category (125 questions) has five kinds of picture that uncover while the clock runs, so faster guesses score more:
-- **Flags:** a 6×4 grid of tiles flips away to reveal a country's flag.
+The **Picture Reveal** category (about 650 questions) has five kinds of picture that uncover while the clock runs, so faster guesses score more:
+- **Flags:** a 6×4 grid of tiles flips away to reveal a flag: 230 of them, every country plus well-known places like Scotland, Puerto Rico and Hong Kong.
 - **Emoji movies:** emoji clues pop in one by one and spell out a film (🦁👑 → The Lion King).
 - **Zoom out:** starts zoomed right into an animal and slowly pulls back.
 - **Shadows:** a black silhouette that slowly fills in with color.
@@ -79,9 +79,9 @@ When you join, pick one of 16 original cartoon characters. Your character shows 
 
 ## Real or Made Up, Brain Teasers and Closest Guess
 
-- **Real or Made Up** (40 statements): common myths and surprising true facts. Is it real, or did someone make it up?
+- **Real or Made Up** (200 statements): common myths and surprising true facts. Is it real, or did someone make it up?
 - **Brain Teasers**: riddles, anagrams (type the unscrambled word) and ordering puzzles (put four things in order by year, height or age).
-- **Closest Guess** (25 questions): type a number. Within 10% of the answer scores, and in a party game the closest team scores too. Numbers can be typed like "1,200", "1.2k" or "about 300".
+- **Closest Guess** (125 questions): type a number. Within 10% of the answer scores, and in a party game the closest team scores too. Numbers can be typed like "1,200", "1.2k" or "about 300".
 
 ## Lightning round and final wager
 
@@ -92,10 +92,10 @@ Both are on by default and can be switched off in setup under **Special rounds**
 
 ## Who Am I?
 
-The **Who Am I?** category (40 famous people: painters, musicians, composers, actors, directors, athletes and writers) shows four clues, one at a time, hardest first. Answer early on fewer clues for more points.
+The **Who Am I?** category (200 famous people: painters, musicians, composers, actors, directors, athletes and writers) shows four clues, one at a time, hardest first. Answer early on fewer clues for more points.
 ## Staten Island
 
-The **Staten Island** category (35 questions) covers the ferry, the bridges, neighborhoods, landmarks, history, food, sports and famous Staten Islanders. Facts were checked against public sources. It's off by default, so tick it in setup.
+The **Staten Island** category (120 questions) covers the ferry, the bridges, neighborhoods, landmarks, history, food, sports and famous Staten Islanders. Facts were checked against public sources. It's off by default, so tick it in setup.
 
 ## My Questions (write your own)
 
@@ -109,7 +109,7 @@ Who makes the best lasagna? | Aunt Rosa | Uncle Joe | Cousin Vinny | Grandma
 
 ## Holiday packs
 
-Six packs of about 15 questions each: 🎄 Christmas, 🎃 Halloween, 🦃 Thanksgiving, 💘 Valentine's Day, 🎆 Fourth of July and 🎉 New Year's. They're listed in setup under **Local & holiday packs** with Staten Island, and the pack for the current season is marked "In season" at the front.
+Six packs of about 70 questions each: 🎄 Christmas, 🎃 Halloween, 🦃 Thanksgiving, 💘 Valentine's Day, 🎆 Fourth of July and 🎉 New Year's. They're listed in setup under **Local & holiday packs** with Staten Island, and the pack for the current season is marked "In season" at the front.
 
 ## Famous Faces
 
@@ -122,7 +122,7 @@ time: first the opening, then a longer stretch, then the whole thing on a loop u
 shown, so fast ears score more. The background music goes quiet while a tune plays, and the host
 voice doesn't read these questions out.
 
-- All 31 melodies are public domain (nursery songs, carols, folk songs and classical pieces). The
+- All 102 melodies are public domain (nursery songs, carols, folk songs, anthems and classical pieces, all written before 1930). The
   app plays its own synthesised arrangement, so there are no recordings to license.
 - Advertising jingles are still under copyright, so they're asked about in words only (for
   example, "Which cereal goes 'Snap! Crackle! Pop!'?"). None are played.
@@ -165,7 +165,7 @@ Tap 🏠 in the top-left corner (or press Back or Escape) to return to the title
 
 - **Mix categories** (on by default): every round mixes your chosen categories one question at a time, so a picture can follow a tune and then a trivia question. Turn it off to spin the wheel for one category per round instead.
 - Pick any mix of categories, 2–6 rounds, 3/5/7/10 questions per round, and a 10–30 second timer.
-- **Most players are:** Kids (6–10), Teens (11–15), Adults, or Experts. Kids only get kid-friendly questions; teens never get adult ones. Experts (16 and up) get only the hardest questions: 160 extra-tough ones across the main topics, plus the adult ones.
+- **Most players are:** Kids (6–10), Teens (11–15), Adults, or Experts. Kids only get kid-friendly questions; teens never get adult ones. Experts (16 and up) get only the hardest questions: more than 800 extra-tough ones across the main topics, plus the adult ones.
 - **50/50 hints:** Off, 1, 3 or 5 per game. A hint removes two wrong answers but halves that question's points.
 
 ## Run it
