@@ -331,7 +331,7 @@ export async function tvReveal(results: AnswerResult[], teams: readonly TeamScor
 export async function tvScores(before: Map<string, number>, standings: readonly TeamScore[], title: string): Promise<void> {
   const max = Math.max(1, ...standings.map((t) => t.score));
   const el = mount(
-    `<div class="board">
+    `<div class="board${standings.length > 6 ? ' many' : ''}">
        <h2 class="board-title">${esc(title)}</h2>
        ${standings
          .map(
@@ -355,19 +355,30 @@ export async function tvScores(before: Map<string, number>, standings: readonly 
 }
 
 /** Final podium. */
-export function tvFinal(standings: readonly TeamScore[], soloPlayers = false, awards = ''): Promise<'again' | 'setup'> {
+export function tvFinal(
+  standings: readonly TeamScore[],
+  soloPlayers = false,
+  awards = '',
+  /** Final wager: what each team won (+) or lost (−) on its bet, so a score of 0 makes sense. */
+  bets?: ReadonlyMap<string, number>,
+): Promise<'again' | 'setup'> {
+  const betNote = (id: string) => {
+    const b = bets?.get(id);
+    if (!b) return '';
+    return b > 0 ? ` · <span class="pod-bet won">won ${b.toLocaleString()} bet</span>` : ` · <span class="pod-bet lost">lost ${(-b).toLocaleString()} bet</span>`;
+  };
   const [first] = standings;
   const tie = standings.length > 1 && standings[1].score === first.score;
   const el = mount(
     `<div class="results">
        <div class="r-title">${tie ? "IT'S A TIE!" : `${esc(first.name)} ${soloPlayers ? 'WINS' : 'WIN'}!`}</div>
-       <div class="podium">${standings
+       <div class="podium${standings.length > 4 ? ' many' : ''}">${standings
          .map(
            (t, i) => `<div class="pod" style="--c:${t.color}; --d:${(standings.length - i) * 250}ms">
              <div class="pod-medal">${['🥇', '🥈', '🥉'][i] ?? `#${i + 1}`}</div>
              <div class="pod-name">${esc(t.name)}</div>
              <div class="pod-score">${t.score.toLocaleString()}</div>
-             <div class="pod-stats">${t.correctCount} right · best streak ${t.bestStreak}</div>
+             <div class="pod-stats">${t.correctCount} right · best streak ${t.bestStreak}${betNote(t.id)}</div>
            </div>`,
          )
          .join('')}</div>

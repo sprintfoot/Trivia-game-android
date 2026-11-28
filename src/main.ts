@@ -423,7 +423,8 @@ async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<voi
       if (top.length > 1 && top[0].score === top[1].score) voice.line('tie');
       else voice.line('winner', { team: top[0].name });
     }, 1500);
-    const next = await party.tvFinal(standings, host.mode === 'players', awardsHtml(awards, new Map(standings.map((t) => [t.id, t.name]))));
+    const bets = new Map(session.history.filter((r) => r.kind === 'wager').map((r) => [r.teamId, r.score.total]));
+    const next = await party.tvFinal(standings, host.mode === 'players', awardsHtml(awards, new Map(standings.map((t) => [t.id, t.name]))), bets);
     if (next === 'setup') {
       host.close();
       return;

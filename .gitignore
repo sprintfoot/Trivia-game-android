@@ -6,3 +6,4 @@ dist/
 local.properties
 .venv-voice/
 .tmp/
+layout-shots/

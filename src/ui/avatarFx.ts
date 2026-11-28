@@ -12,7 +12,8 @@ export function avatarHtml(id: string, mood: Mood = 'idle', cls = ''): string {
 
 /** A row of every player's avatar, grouped by team, for the TV. */
 export function crowdHtml(teams: readonly PublicTeam[]): string {
-  return `<div class="crowd">${teams
+  const n = teams.reduce((sum, t) => sum + t.members.length, 0);
+  return `<div class="crowd" style="--n:${Math.max(1, n)}">${teams
     .filter((t) => t.members.length)
     .map(
       (t) => `<div class="crowd-team" data-team="${t.id}" style="--c:${t.color}">${t.members

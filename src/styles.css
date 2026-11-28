@@ -425,9 +425,11 @@ button {
 
 .q-area {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  /* "safe": if the content is ever too tall, it runs off the bottom instead of climbing over the HUD. */
+  justify-content: safe flex-end;
   gap: 14px;
   padding-top: 10px;
 }
@@ -645,7 +647,7 @@ button {
 /* ---------- results ---------- */
 
 .results-screen {
-  justify-content: center;
+  justify-content: safe center;
 }
 .results {
   margin: auto 0;
@@ -1388,7 +1390,7 @@ button:focus-visible {
 /* ---------- scoreboard ---------- */
 
 .board-screen {
-  justify-content: center;
+  justify-content: safe center;
 }
 .board {
   width: min(900px, 100%);
@@ -2116,12 +2118,11 @@ button:focus-visible {
   100% { opacity: 0; transform: rotate(360deg); }
 }
 
-/* The crowd of avatars along the bottom of the TV. */
+/* The crowd of avatars along the bottom of the TV. It takes its own row so it never covers the answers. */
 .crowd {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: calc(6px + var(--safe-bottom));
+  position: relative;
+  flex: none;
+  margin-top: 6px;
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
@@ -2177,15 +2178,9 @@ button:focus-visible {
   place-items: center;
   animation: pop-in 0.3s cubic-bezier(0.2, 1.6, 0.4, 1);
 }
-.party-q .q-area {
-  padding-bottom: clamp(56px, 11vh, 140px);
-}
 @media (orientation: landscape) and (max-height: 520px) {
   .crowd-member i {
     display: none;
-  }
-  .party-q .q-area {
-    padding-bottom: 40px;
   }
 }
 
@@ -2322,7 +2317,7 @@ button:focus-visible {
 }
 .wheel-screen.wager {
   pointer-events: auto;
-  justify-content: center;
+  justify-content: safe center;
 }
 .wager-screen {
   margin: auto;
@@ -3222,4 +3217,588 @@ body.going-home #stage {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     margin-top: 8px;
   }
+}
+
+/* =====================================================================
+   Phone-sized host screens (portrait and landscape).
+   A party game hosted on a phone has to fit up to ten players' scores,
+   the question, four answers and everyone's avatars on one small screen,
+   so these rules give each part its own space instead of letting them stack.
+   ===================================================================== */
+
+/* Long team names never push a score out of its box. */
+.pod-name,
+.bname,
+.ss-name,
+.wager-team b {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pod {
+  grid-template-columns: 50px minmax(0, 1fr) auto;
+}
+.pod-score {
+  white-space: nowrap;
+}
+.pod-bet.won {
+  color: var(--good);
+}
+.pod-bet.lost {
+  color: #ff8a99;
+}
+.board-row {
+  grid-template-columns: 40px minmax(0, 1.2fr) minmax(40px, 3fr) auto;
+}
+.bscore {
+  white-space: nowrap;
+}
+.wager-screen {
+  max-height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+/* The answer reveal pop-up gets its own backdrop so it reads clearly over the question. */
+.verdict .v-parts {
+  max-height: 40vh;
+  overflow: hidden;
+}
+
+/* The phone controller scrolls rather than cutting anything off. */
+.ctl {
+  justify-content: safe center;
+  min-height: 0;
+  overflow-y: auto;
+}
+body:has(.home-btn:not([hidden])) .ctl-top {
+  padding-left: 50px;
+}
+
+/* Avatars shrink to fit everyone on one row on small screens. */
+@media (max-width: 600px), (orientation: landscape) and (max-height: 520px) {
+  .crowd {
+    flex-wrap: nowrap;
+    gap: 3px;
+    margin-top: 4px;
+  }
+  .crowd-team {
+    flex: 0 1 auto;
+    min-width: 0;
+    gap: 2px;
+    padding: 2px 3px 1px;
+    border-radius: 10px;
+    border-bottom-width: 2px;
+  }
+  .crowd-member {
+    min-width: 0;
+  }
+  .crowd-member .av {
+    --av: clamp(20px, calc((100vw - 48px) / var(--n, 8) - 10px), 34px);
+    width: var(--av);
+    height: var(--av);
+    font-size: var(--av);
+  }
+  .crowd-member i {
+    display: none;
+  }
+  .crowd-member.voted .av::after {
+    width: 12px;
+    height: 12px;
+    font-size: 9px;
+    right: -3px;
+    top: -3px;
+  }
+
+  /* Timer sits in the top bar next to the Home button. */
+  .party-q .timer {
+    position: absolute;
+    top: calc(12px + var(--safe-top));
+    left: calc(62px + var(--safe-left, 0px));
+    width: 42px;
+    height: 42px;
+    margin: 0;
+    z-index: 3;
+  }
+  .party-q .timer .secs {
+    font-size: 18px;
+  }
+  .party-q .timer svg {
+    filter: drop-shadow(0 0 4px var(--cyan));
+  }
+
+  /* Scores: small chips, name cut short with "…", score always visible. */
+  .score-strip {
+    display: grid !important;
+    gap: 4px;
+    min-width: 0;
+  }
+  .ss-team {
+    min-width: 0;
+    gap: 6px;
+    padding: 3px 8px;
+    border-width: 1.5px;
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.25;
+  }
+  .ss-name {
+    flex: 1;
+  }
+  .ss-score {
+    flex: none;
+  }
+  .ss-lock {
+    flex: none;
+    width: 0.8em;
+  }
+  .ss-team.locked {
+    box-shadow: 0 0 8px var(--c);
+  }
+  .tv-hud .hud-mid {
+    padding: 5px 10px;
+    font-size: 14px;
+    white-space: nowrap;
+    line-height: 1.2;
+  }
+
+  .party-q .q-area {
+    padding-top: 6px;
+    gap: 6px;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .party-q .q-area::-webkit-scrollbar {
+    display: none;
+  }
+  .party-q .tv-hint {
+    font-size: 12px;
+  }
+  .party-q .tv-local {
+    gap: 8px;
+  }
+  .party-q .tv-local .hint-btn {
+    padding: 4px 12px;
+    font-size: 13px;
+  }
+  /* Team badges on the answers after the reveal. */
+  .party-q .ans .badges {
+    gap: 2px;
+    max-width: 55%;
+  }
+  .party-q .badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    max-width: 8em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .verdict {
+    background: rgba(7, 6, 26, 0.82);
+    border-radius: 22px;
+    padding: 8px 10px 12px;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+  .v-label {
+    font-size: clamp(30px, 10vw, 48px);
+  }
+  .v-parts {
+    gap: 4px;
+  }
+  .v-parts span {
+    font-size: 11px;
+    padding: 2px 8px;
+  }
+
+  /* Leaderboard between rounds. */
+  .board {
+    gap: 6px;
+    max-height: 100%;
+    overflow-y: auto;
+  }
+  .board-title {
+    font-size: clamp(24px, 7vw, 36px);
+    margin: 0 0 2px;
+    padding-left: 44px;
+    padding-right: 44px;
+  }
+  .board-row {
+    grid-template-columns: 22px minmax(0, 1.3fr) minmax(30px, 1fr) auto;
+    gap: 8px;
+    padding: 6px 10px;
+    font-size: 15px;
+    border-radius: 12px;
+  }
+  .board-row .rank {
+    font-size: 17px;
+  }
+  .score-bar {
+    height: 10px;
+  }
+  .bscore {
+    min-width: 0;
+  }
+
+  /* Results: the title keeps clear of the Home button. */
+  .results .r-title {
+    padding: 0 34px;
+    font-size: clamp(26px, 8vw, 40px);
+  }
+
+  /* Final podium. */
+  .podium.many {
+    gap: 6px;
+  }
+  .podium.many .pod {
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    padding: 6px 12px;
+    border-radius: 12px;
+  }
+  .podium.many .pod-medal {
+    font-size: 24px;
+  }
+  .podium.many .pod-name {
+    font-size: 17px;
+  }
+  .podium.many .pod-score {
+    font-size: 19px;
+  }
+  .podium.many .pod-stats {
+    font-size: 11.5px;
+  }
+  .podium.many .pod:first-child {
+    transform: none;
+    box-shadow: 0 0 18px var(--c);
+  }
+
+  /* Party bets. */
+  .wager-teams {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 6px;
+    width: 100%;
+  }
+  .wager-team {
+    min-width: 0;
+    padding: 5px 10px;
+    border-radius: 12px;
+    font-size: 14px;
+  }
+  .wager-team span,
+  .wager-team i {
+    font-size: 12px;
+  }
+}
+
+/* Upright phone: top bar is Home · timer · question number, then the scores in two columns. */
+@media (max-width: 600px) and (orientation: portrait) {
+  .tv-hud {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      '. mid'
+      'strip strip';
+    row-gap: 8px;
+    padding-left: 0 !important;
+  }
+  .tv-hud .hud-mid {
+    grid-area: mid;
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tv-hud .score-strip {
+    grid-area: strip;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+  .party-q .q-card {
+    padding: 10px 14px 12px;
+    border-radius: 18px;
+  }
+  .party-q .q-cat {
+    margin-bottom: 4px;
+  }
+  .party-q .q-text {
+    font-size: clamp(17px, 2.6vh, 24px);
+  }
+  .party-q .pic-photo canvas {
+    max-height: min(18vh, 200px);
+  }
+  .party-q .pic-clues li {
+    padding: 4px 10px;
+    font-size: 13px;
+  }
+  .party-q .q-card:has(.pic-clues) .q-text {
+    display: none;
+  }
+  .party-q .ans {
+    min-height: clamp(42px, 6vh, 54px);
+    padding: 6px 12px;
+    font-size: 15px;
+  }
+  .party-q .ans .letter {
+    width: 30px;
+    height: 30px;
+  }
+  .party-q .answers {
+    gap: 6px;
+  }
+  .party-q .verdict {
+    top: 40%;
+  }
+}
+
+/* Phone on its side: scores in a column on the left, question and answers side by side on the right. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .party-q.screen {
+    display: grid;
+    grid-template-columns: clamp(176px, 24vw, 210px) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'hud q'
+      'crowd crowd';
+    column-gap: 14px;
+    padding-top: calc(8px + var(--safe-top));
+    padding-bottom: calc(6px + var(--safe-bottom));
+  }
+  .party-q .tv-hud {
+    grid-area: hud;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 6px;
+    min-height: 0;
+    padding-left: 0 !important;
+  }
+  .party-q .tv-hud .hud-mid {
+    order: -1;
+    align-self: flex-end;
+    min-height: 42px;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .party-q .score-strip {
+    grid-template-columns: 1fr;
+    align-content: start;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: none;
+    padding: 3px 2px !important;
+  }
+  .party-q .score-strip::-webkit-scrollbar {
+    display: none;
+  }
+  .party-q .ss-team {
+    padding: 2px 8px;
+  }
+  .party-q .timer {
+    top: calc(12px + var(--safe-top));
+  }
+  .party-q .q-area {
+    grid-area: q;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'card answers'
+      'hint answers';
+    column-gap: 12px;
+    row-gap: 6px;
+    padding-top: 0;
+    align-items: center;
+  }
+  .party-q .crowd {
+    grid-area: crowd;
+  }
+  .party-q .q-card {
+    padding: 10px 14px 12px;
+    max-height: 100%;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .party-q .q-text {
+    font-size: clamp(15px, 4.6vh, 20px);
+  }
+  .party-q .pic-photo canvas {
+    max-height: min(34vh, 160px);
+  }
+  .question .q-card:has(.pic-clues) .q-text {
+    display: none;
+  }
+  .question .pic-clues {
+    gap: 3px;
+    margin-top: 4px;
+  }
+  .question .pic-clues li {
+    padding: 3px 8px;
+    font-size: 12px;
+  }
+  .question .pic-clues li b {
+    width: 20px;
+    height: 20px;
+    font-size: 11px;
+  }
+  .party-q .answers,
+  .question.party-q .answers {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .party-q .ans {
+    min-height: 40px;
+    font-size: 14px;
+    padding: 4px 10px;
+  }
+  .party-q .tv-hint,
+  .party-q .tv-local {
+    grid-area: hint;
+  }
+  .party-q .verdict {
+    left: calc(50% + 4vw);
+    top: 45%;
+    width: 60%;
+  }
+
+  /* Solo question: the card shrinks (and scrolls if it must) so the 50/50 button stays on screen. */
+  .question:not(.party-q) .q-area {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+  .question:not(.party-q) .q-card {
+    max-height: 100%;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .question:not(.party-q) .pic-photo canvas {
+    max-height: min(30vh, 140px);
+  }
+  .party-q .ans .badges {
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+
+  /* Phone controller held sideways: answers in a 2 × 2 grid. */
+  .ctl-q {
+    gap: 8px;
+  }
+  .ctl-prompt {
+    font-size: 16px;
+    padding: 8px 12px;
+  }
+  .ctl-answers {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: repeat(2, minmax(44px, 1fr));
+    gap: 8px;
+  }
+  .ctl-ans {
+    font-size: 15px;
+    padding: 6px 10px;
+    border-radius: 14px;
+  }
+  .ctl-ans .letter {
+    width: 30px;
+    height: 30px;
+  }
+  .ctl-timer {
+    font-size: 20px;
+  }
+  .ctl-q .hint-btn {
+    padding: 4px 12px;
+    font-size: 13px;
+  }
+
+  /* Podium rows stay slim. */
+  .pod {
+    padding: 6px 12px;
+  }
+  .pod-medal {
+    font-size: 26px;
+  }
+  .pod-name {
+    font-size: 17px;
+  }
+  .pod-score {
+    font-size: 19px;
+  }
+  .pod:first-child {
+    transform: none;
+  }
+
+  /* Leaderboard and podium in two columns so ten players fit. */
+  .board {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 10px;
+    align-content: start;
+  }
+  .board-title {
+    grid-column: 1 / -1;
+  }
+  .podium.many {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 8px;
+  }
+  .results-screen .results {
+    padding: 10px 14px;
+  }
+  .results-screen .r-title {
+    font-size: 26px;
+  }
+  .results-screen .foot .btn {
+    padding: 10px 16px;
+    font-size: 15px;
+  }
+  .wager-teams {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+}
+
+/* Two-column podium and leaderboard on wide screens too, once there are lots of players. */
+@media (orientation: landscape) and (min-aspect-ratio: 4/3) {
+  .podium.many {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .board.many {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 14px;
+    width: min(1400px, 100%);
+  }
+  .board.many .board-title {
+    grid-column: 1 / -1;
+  }
+}
+.board {
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+/* Sideways screens: the question card never grows past its row; a photo shrinks to fit inside it. */
+@media (orientation: landscape) and (min-aspect-ratio: 4/3) {
+  .question .q-area {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+  .question .q-card {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    max-height: 100%;
+  }
+  .question .q-card > .pic-photo {
+    flex: 0 1 auto;
+    min-height: 0;
+  }
+  .question .pic-photo canvas {
+    min-height: 0;
+    flex: 0 1 auto;
+    object-fit: contain;
+  }
+}
+.board.many .board-row {
+  grid-template-columns: 1.6em minmax(0, 1.5fr) minmax(30px, 1.5fr) auto;
 }
