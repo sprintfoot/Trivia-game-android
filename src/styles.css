@@ -3802,3 +3802,34 @@ body:has(.home-btn:not([hidden])) .ctl-top {
 .board.many .board-row {
   grid-template-columns: 1.6em minmax(0, 1.5fr) minmax(30px, 1.5fr) auto;
 }
+
+/* ---------------- Backup & restore ---------------- */
+.bk-what {
+  margin: 0;
+  font-weight: 700;
+  font-size: 15px;
+}
+.bk-h {
+  margin: 8px 0 0;
+  font-size: 18px;
+}
+.bk-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.bk-btns.two {
+  flex-direction: row;
+}
+.bk-btns.two .btn {
+  flex: 1;
+}
+.bk-file {
+  text-align: center;
+  cursor: pointer;
+}
+.backup-sheet .pk-bulk textarea {
+  margin: 8px 0;
+  font-family: ui-monospace, monospace;
+  font-size: 13px;
+}

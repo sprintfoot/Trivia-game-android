@@ -10,6 +10,7 @@ import { avatarHtml, react, wrongReaction } from './avatarFx';
 import { isTyped, parseGuess } from '../game/session';
 import { customCount, loadPacks } from '../game/custom';
 import { openPackEditor } from './packs';
+import { openBackup } from './backup';
 
 const root = document.getElementById('ui')!;
 const flashEl = document.getElementById('flash')!;
@@ -706,6 +707,7 @@ export function openSettings(settings: Settings, onChange: (s: Settings) => void
           .map((q) => `<button class="seg-opt ${settings.quality === q ? 'on' : ''}" data-val="${q}">${q[0].toUpperCase() + q.slice(1)}</button>`)
           .join('')}</div></div>
       <p class="hint">Every sound is synthesised live in the app. The host voice uses your device's built-in speech.</p>
+      <button class="btn ghost" data-backup>💾 BACKUP &amp; RESTORE</button>
       ${canFullscreen() ? '<button class="btn ghost" data-fs>FULL SCREEN</button>' : ''}
       <button class="btn primary" data-close data-focus>DONE</button>
     </div>`;
@@ -727,6 +729,10 @@ export function openSettings(settings: Settings, onChange: (s: Settings) => void
       onChange(settings);
     }),
   );
+  press(overlay.querySelector('[data-backup]')!, () => {
+    overlay.remove();
+    openBackup();
+  });
   overlay.querySelector('[data-fs]')?.addEventListener('click', () => {
     toggleFullscreen();
     overlay.remove();
