@@ -23,6 +23,7 @@ import { awardsHtml, showHall } from './ui/hall';
 import { dailyConfig, dailySeed, dailyStreak, dateKey, shareText, todaysDaily } from './game/daily';
 import { mulberry32 } from './game/session';
 import { customBankQuestions, loadPacks } from './game/custom';
+import { markUsed, usedToday } from './game/recent';
 
 /** The built-in questions plus any the players wrote themselves. */
 const fullBank = () => [...BANK, ...customBankQuestions(loadPacks())];
@@ -49,7 +50,9 @@ async function playGame(config: GameConfig, daily = false): Promise<'again' | 's
   const today = new Date();
   const key = dateKey(today);
   // The daily challenge deals the same questions to everyone today.
-  const session = daily ? new GameSession(config, BANK, mulberry32(dailySeed(key))) : new GameSession(config, fullBank());
+  const session = daily
+    ? new GameSession(config, BANK, mulberry32(dailySeed(key)))
+    : new GameSession(config, fullBank(), Math.random, undefined, usedToday());
   const alreadyPlayed = daily ? todaysDaily(loadHall(), today) : null;
   setHome({ mode: 'confirm', title: 'Quit this game?', detail: 'Your score so far will be lost.' });
   stage.wheel.build(config.categories.map(getCategory));
@@ -68,6 +71,7 @@ async function playGame(config: GameConfig, daily = false): Promise<'again' | 's
     }
     while (session.hasNextQuestion()) {
       const q = session.nextQuestion();
+      markUsed(q.id);
       const qcat = catFor(session, cat, q);
       if (qcat !== cat) stage.setAccent(qcat.color);
       const hud: ui.Hud = {
@@ -224,19 +228,32 @@ async function spinForRound(session: GameSession, host: PartyHost | null): Promi
   return cat;
 }
 
+/**
+ * The party room stays open between games while the app is running, so players stay joined when the
+ * host goes back to the title and starts a different game. After a restart the room reopens with the
+ * same code and the phones, which keep trying it, come back by themselves.
+ */
+let room: PartyHost | null = null;
+
 async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<void> {
-  const host = new PartyHost();
-  party.showMessageNoButton('Opening a room…');
-  try {
-    await host.open(opts.teamMode, opts.teamCount);
-    setHome({ mode: 'confirm', title: 'Close the room?', detail: 'The game ends for everyone and the phones go back to the start.', cleanup: () => host.close() });
-  } catch (e) {
-    await party.showMessage("Couldn't open a room", e instanceof Error ? e.message : String(e));
-    return;
+  let host = room;
+  if (!host?.isOpen) {
+    host = new PartyHost();
+    party.showMessageNoButton('Opening a room…');
+    try {
+      await host.open(opts.teamMode, opts.teamCount);
+      room = host;
+    } catch (e) {
+      await party.showMessage("Couldn't open a room", e instanceof Error ? e.message : String(e));
+      return;
+    }
   }
+  const live = host;
+  setHome({ mode: 'confirm', title: 'Quit to the home screen?', detail: 'This game ends. Players stay joined for your next one.', cleanup: () => live.suspend() });
 
   for (;;) {
-    host.locked = false;
+    host.newLobby(opts.teamMode, opts.teamCount);
+    host.bindScores(() => []);
     stage.setMode('idle');
     stage.setAccent('#38e1ff');
     sound.setMusic('lobby');
@@ -244,14 +261,14 @@ async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<voi
     host.events = { onLobby: lobby.refresh };
     host.lobbyChanged();
     if ((await lobby.started) === 'back') {
-      host.close();
+      host.hold();
       return;
     }
 
     // Lock the line-up: only teams with players take part; late joiners slot into those teams.
     host.locked = true;
     host.teams = host.activeTeams();
-    const session = new GameSession(config, fullBank(), Math.random, host.teams);
+    const session = new GameSession(config, fullBank(), Math.random, host.teams, usedToday());
     host.bindScores(() => session.teams);
     let tvNow: ReturnType<typeof party.tvQuestion> | null = null;
     host.events = {
@@ -279,6 +296,7 @@ async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<voi
 
       while (session.hasNextQuestion()) {
         const q = session.nextQuestion();
+        markUsed(q.id);
         const qcat = catFor(session, cat, q);
         if (qcat !== cat) stage.setAccent(qcat.color);
         qid += 1;
@@ -426,11 +444,10 @@ async function hostParty(config: GameConfig, opts: ui.PartyOptions): Promise<voi
     const bets = new Map(session.history.filter((r) => r.kind === 'wager').map((r) => [r.teamId, r.score.total]));
     const next = await party.tvFinal(standings, host.mode === 'players', awardsHtml(awards, new Map(standings.map((t) => [t.id, t.name]))), bets);
     if (next === 'setup') {
-      host.close();
+      host.hold();
       return;
     }
     // Rematch: back to the lobby with the same room code so people can swap teams.
-    host.bindScores(() => []);
   }
 }
 
