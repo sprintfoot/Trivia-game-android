@@ -28,7 +28,10 @@ export interface PublicTeam {
 
 export type HostMsg =
   | { t: 'welcome'; playerId: string; teamId: string | null; mode: TeamMode }
-  | { t: 'lobby'; mode: TeamMode; teams: PublicTeam[]; you: { playerId: string; teamId: string | null } }
+  /** open: the lobby is taking players for the next game (false while a game is on). */
+  | { t: 'lobby'; mode: TeamMode; teams: PublicTeam[]; you: { playerId: string; teamId: string | null }; open: boolean }
+  /** The host is between games (back on the title or setting up). Phones stay joined and wait. */
+  | { t: 'hold'; text: string }
   | {
       t: 'screen';
       screen: 'wheel' | 'category' | 'scores' | 'wait';

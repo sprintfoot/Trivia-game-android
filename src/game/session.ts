@@ -168,6 +168,18 @@ export function shuffle<T>(items: readonly T[], rng: Rng): T[] {
 }
 
 /**
+ * Shuffles questions so the ones not asked recently come first. Recently asked ones follow,
+ * the longest-ago first, so a category that runs out still has something to ask.
+ */
+export function freshFirst(questions: readonly BankQuestion[], avoid: readonly string[], rng: Rng): BankQuestion[] {
+  if (avoid.length === 0) return shuffle(questions, rng);
+  const when = new Map(avoid.map((id, i) => [id, i]));
+  const fresh = shuffle(questions.filter((q) => !when.has(q.id)), rng);
+  const used = questions.filter((q) => when.has(q.id)).sort((a, b) => when.get(a.id)! - when.get(b.id)!);
+  return [...fresh, ...used];
+}
+
+/**
  * Runs one game: picks a category per round, serves questions and keeps score for one or more teams.
  * A solo game is a game with a single team; the solo helpers (score, submit, useHint…) act on it.
  */
@@ -196,6 +208,8 @@ export class GameSession {
     bank: readonly BankQuestion[],
     private readonly rng: Rng = Math.random,
     teams: readonly TeamInfo[] = [{ id: 'solo', name: 'You', color: '#38e1ff' }],
+    /** Questions already asked recently, oldest first. They are dealt only once a category runs out of others. */
+    avoid: readonly string[] = [],
   ) {
     if (config.categories.length === 0) throw new Error('Pick at least one category');
     if (teams.length === 0) throw new Error('Need at least one team');
@@ -208,9 +222,14 @@ export class GameSession {
       const suitable = all.filter((q) => allowed.includes(q.age ?? 'teen'));
       const questions = suitable.length >= MIN_POOL ? suitable : all;
       this.byCategory.set(id, questions);
-      // Experts are dealt the hard questions first, then the adult ones.
-      const hardFirst = config.ageGroup === 'expert' ? [...shuffle(questions.filter((q) => q.age === 'expert'), rng), ...shuffle(questions.filter((q) => q.age !== 'expert'), rng)] : null;
-      this.pools.set(id, hardFirst ?? shuffle(questions, rng));
+      const pool = freshFirst(questions, avoid, rng);
+      if (config.ageGroup === 'expert') {
+        // Experts are dealt the hard questions first, then the adult ones, still unseen ones before repeats.
+        const seen = new Set(avoid);
+        const rank = (q: BankQuestion) => (seen.has(q.id) ? 2 : 0) + (q.age === 'expert' ? 0 : 1);
+        pool.sort((x, y) => rank(x) - rank(y));
+      }
+      this.pools.set(id, pool);
     }
     this.kinds = Array<RoundKind>(config.rounds).fill('normal');
     if (config.lightning) this.kinds.splice(Math.max(0, config.rounds - 1), 0, 'lightning');

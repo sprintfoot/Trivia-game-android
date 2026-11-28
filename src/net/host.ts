@@ -14,6 +14,12 @@ export interface Player {
   local?: boolean;
 }
 
+/** One phone's connection, and the player it speaks for once it has said hello. */
+interface Slot {
+  conn: DataConnection;
+  playerId: string | null;
+}
+
 const isOnline = (p: Player) => !!p.conn || !!p.local;
 
 export interface HostEvents {
@@ -29,6 +35,33 @@ export interface HostEvents {
 
 const MAX_NAME = 16;
 
+/** The host's room code, kept so the same code (and the phones on it) carry over to the next game. */
+const ROOM_KEY = 'trivia-party:room';
+/** A remembered code is reused for this long after it was last used. */
+const ROOM_TTL_MS = 12 * 60 * 60 * 1000;
+
+function rememberedCode(): string | null {
+  try {
+    const raw = localStorage.getItem(ROOM_KEY);
+    const r = raw ? (JSON.parse(raw) as { code?: string; at?: number }) : null;
+    if (r?.code && /^[A-Z0-9]{4}$/.test(r.code) && Date.now() - (r.at ?? 0) < ROOM_TTL_MS) return r.code;
+  } catch {
+    // Unreadable: a fresh code is fine.
+  }
+  return null;
+}
+
+function rememberCode(code: string): void {
+  try {
+    localStorage.setItem(ROOM_KEY, JSON.stringify({ code, at: Date.now() }));
+  } catch {
+    // Not stored: the next game gets a new code.
+  }
+}
+
+const validId = (id: unknown): id is string => typeof id === 'string' && /^[a-z0-9]{4,16}$/.test(id);
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 /** The TV/host end of a party game: owns the room code, player list, teams and live votes. */
 export class PartyHost {
   code = '';
@@ -36,6 +69,8 @@ export class PartyHost {
   teams: TeamInfo[] = [];
   mode: TeamMode = 'teams';
   locked = false;
+  /** Between games: phones stay joined and are told to wait for the next one. */
+  holding = false;
   events: HostEvents = {};
 
   private peer: Peer | null = null;
@@ -47,22 +82,72 @@ export class PartyHost {
   /** Set for fill-in-the-blank questions: is this typed guess right? */
   matcher: ((text: string) => boolean) | null = null;
 
-  /** Opens the room. Retries with a fresh code if one is already taken. */
+  /** True while the room is open and reachable by phones. */
+  get isOpen(): boolean {
+    return !!this.peer && !this.peer.destroyed;
+  }
+
+  /**
+   * Opens the room. Reuses the last room code when it can, so phones from the last game
+   * (which keep trying it) find their way back without scanning again. Otherwise picks a fresh code.
+   */
   async open(mode: TeamMode, teamCount: number): Promise<string> {
-    this.mode = mode;
-    this.teams = mode === 'teams' ? TEAM_PRESETS.slice(0, teamCount) : [];
-    for (let attempt = 0; attempt < 5; attempt++) {
-      const code = makeRoomCode();
+    this.newLobby(mode, teamCount);
+    const old = rememberedCode();
+    // Right after the app restarts the old code can take a few seconds to be released.
+    const tries = old ? [old, old, old, old] : [];
+    for (let attempt = 0; attempt < tries.length + 5; attempt++) {
+      const code = tries[attempt] ?? makeRoomCode();
       try {
         this.peer = await this.listen(code);
         this.code = code;
+        rememberCode(code);
         return code;
       } catch (e) {
         if (!(e instanceof Error) || !e.message.includes('unavailable-id')) throw e;
+        if (attempt < tries.length - 1) await wait(2000);
       }
     }
     throw new Error('Could not get a room code. Check your internet connection and try again.');
   }
+
+  /**
+   * Gets the room ready for a new game, keeping everyone who is still connected.
+   * Players who left or dropped off since the last game are let go; they can rejoin any time.
+   */
+  newLobby(mode: TeamMode, teamCount: number): void {
+    this.holding = false;
+    this.locked = false;
+    for (const p of [...this.players.values()]) if (!isOnline(p)) this.players.delete(p.id);
+    const changed = mode !== this.mode;
+    this.mode = mode;
+    if (mode === 'teams') {
+      this.teams = TEAM_PRESETS.slice(0, teamCount);
+      for (const p of this.players.values()) if (changed || !this.teams.some((t) => t.id === p.teamId)) p.teamId = null;
+      for (const p of this.players.values()) if (!p.teamId) p.teamId = this.smallestTeam();
+    } else {
+      this.teams = [];
+      for (const p of this.players.values()) this.giveOwnTeam(p);
+    }
+    if (this.code) rememberCode(this.code);
+    // Phones that arrived mid-game join now.
+    const waiting = this.waitlist;
+    this.waitlist = [];
+    for (const w of waiting) if (w.slot.conn.open) w.slot.playerId = this.hello(w.slot, w.msg);
+  }
+
+  /** Between games: phones stay joined and see the given message until the next lobby opens. */
+  hold(text = 'The host is setting up the next game.'): void {
+    this.holding = true;
+    this.locked = false;
+    this.holdText = text;
+    this.broadcast({ t: 'hold', text });
+    this.events = {};
+  }
+
+  private holdText = '';
+  /** Phones that arrived while an every-player-for-themselves game was on. */
+  private waitlist: { slot: Slot; msg: Extract<PlayerMsg, { t: 'hello' }> }[] = [];
 
   private listen(code: string): Promise<Peer> {
     return new Promise((resolve, reject) => {
@@ -83,8 +168,12 @@ export class PartyHost {
     });
   }
 
-  close(): void {
-    this.broadcast({ t: 'bye', reason: 'The host ended the game.' });
+  /**
+   * The host is leaving this screen (e.g. the app restarts to the title). Phones are told to wait,
+   * and keep trying the same room code until the host opens it again.
+   */
+  suspend(): void {
+    this.hold('The host is setting up the next game.');
     setTimeout(() => this.peer?.destroy(), 300);
   }
 
@@ -96,23 +185,25 @@ export class PartyHost {
   // ---------- membership ----------
 
   private accept(conn: DataConnection): void {
-    let playerId: string | null = null;
+    const slot: Slot = { conn, playerId: null };
     conn.on('data', (raw) => {
       const msg = raw as PlayerMsg;
       if (msg.t === 'hello') {
-        playerId = this.hello(conn, msg);
+        slot.playerId = this.hello(slot, msg);
         return;
       }
-      if (msg.t === 'leave' && playerId) {
-        this.leave(playerId);
-        playerId = null;
+      if (msg.t === 'leave') {
+        this.waitlist = this.waitlist.filter((w) => w.slot !== slot);
+        if (slot.playerId) this.leave(slot.playerId);
+        slot.playerId = null;
         return;
       }
-      if (playerId) this.handle(playerId, msg);
+      if (slot.playerId) this.handle(slot.playerId, msg);
     });
     conn.on('close', () => {
-      if (!playerId) return;
-      const p = this.players.get(playerId);
+      this.waitlist = this.waitlist.filter((w) => w.slot !== slot);
+      if (!slot.playerId) return;
+      const p = this.players.get(slot.playerId);
       if (p && p.conn === conn) {
         p.conn = null;
         this.lobbyChanged();
@@ -121,9 +212,11 @@ export class PartyHost {
     conn.on('error', () => conn.close());
   }
 
-  private hello(conn: DataConnection, msg: Extract<PlayerMsg, { t: 'hello' }>): string | null {
+  private hello(slot: Slot, msg: Extract<PlayerMsg, { t: 'hello' }>): string | null {
+    const conn = slot.conn;
     const name = String(msg.name ?? '').trim().slice(0, MAX_NAME) || 'Player';
-    let p = msg.playerId ? this.players.get(msg.playerId) : undefined;
+    const askedId = validId(msg.playerId) ? msg.playerId : undefined;
+    let p = askedId ? this.players.get(askedId) : undefined;
     const avatar = avatarDef(msg.avatar).id === msg.avatar ? msg.avatar! : randomAvatar();
     if (p) {
       // Rejoining (phone slept or lost signal): keep their team and score.
@@ -132,29 +225,34 @@ export class PartyHost {
       if (msg.avatar) p.avatar = avatar;
     } else {
       if (this.locked && this.mode === 'players') {
-        conn.send({ t: 'bye', reason: 'This game has already started.' } satisfies HostMsg);
-        setTimeout(() => conn.close(), 300);
+        // Every player is their own team, so nobody new can join mid-game: they wait for the next one.
+        this.waitlist = this.waitlist.filter((w) => w.slot !== slot);
+        this.waitlist.push({ slot, msg });
+        conn.send({ t: 'hold', text: "A game is on right now. You'll be in the next one." } satisfies HostMsg);
         return null;
       }
-      p = this.addPlayer(name, conn, false, avatar);
+      // A phone from an earlier game keeps its id, so it stays the same player from game to game.
+      p = this.addPlayer(name, conn, false, avatar, askedId);
     }
     this.send(p, { t: 'welcome', playerId: p.id, teamId: p.teamId, mode: this.mode });
+    if (this.holding) this.send(p, { t: 'hold', text: this.holdText });
     this.lobbyChanged();
     return p.id;
   }
 
-  private addPlayer(name: string, conn: DataConnection | null, local = false, avatar = randomAvatar()): Player {
-    const id = Math.random().toString(36).slice(2, 10);
+  private addPlayer(name: string, conn: DataConnection | null, local = false, avatar = randomAvatar(), id = Math.random().toString(36).slice(2, 10)): Player {
     const p: Player = { id, name, teamId: null, conn, local, avatar };
     this.players.set(id, p);
-    if (this.mode === 'players') {
-      const color = PLAYER_COLORS[this.teams.length % PLAYER_COLORS.length];
-      this.teams.push({ id: `p-${id}`, name, color });
-      p.teamId = `p-${id}`;
-    } else {
-      p.teamId = this.smallestTeam();
-    }
+    if (this.mode === 'players') this.giveOwnTeam(p);
+    else p.teamId = this.smallestTeam();
     return p;
+  }
+
+  /** Every-player-for-themselves: each player is their own team. */
+  private giveOwnTeam(p: Player): void {
+    const color = PLAYER_COLORS[this.teams.length % PLAYER_COLORS.length];
+    this.teams.push({ id: `p-${p.id}`, name: p.name, color });
+    p.teamId = `p-${p.id}`;
   }
 
   // ---------- the host playing along ----------
@@ -176,7 +274,10 @@ export class PartyHost {
     if (p && !this.locked) this.removePlayer(p.id);
   }
 
-  /** A player chose to leave: gone from the lobby before the game; mid-game their team keeps its points. */
+  /**
+   * A player chose to leave: gone from the lobby before the game; mid-game their team keeps its
+   * points, and they are let go when the next game's lobby opens.
+   */
   private leave(playerId: string): void {
     const p = this.players.get(playerId);
     if (!p) return;
@@ -295,7 +396,8 @@ export class PartyHost {
   lobbyChanged(): void {
     const teams = this.publicTeams();
     for (const p of this.players.values()) {
-      this.send(p, { t: 'lobby', mode: this.mode, teams, you: { playerId: p.id, teamId: p.teamId } });
+      if (this.holding) continue;
+      this.send(p, { t: 'lobby', mode: this.mode, teams, you: { playerId: p.id, teamId: p.teamId }, open: !this.locked });
     }
     this.events.onLobby?.();
   }
