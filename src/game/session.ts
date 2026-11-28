@@ -208,7 +208,9 @@ export class GameSession {
       const suitable = all.filter((q) => allowed.includes(q.age ?? 'teen'));
       const questions = suitable.length >= MIN_POOL ? suitable : all;
       this.byCategory.set(id, questions);
-      this.pools.set(id, shuffle(questions, rng));
+      // Experts are dealt the hard questions first, then the adult ones.
+      const hardFirst = config.ageGroup === 'expert' ? [...shuffle(questions.filter((q) => q.age === 'expert'), rng), ...shuffle(questions.filter((q) => q.age !== 'expert'), rng)] : null;
+      this.pools.set(id, hardFirst ?? shuffle(questions, rng));
     }
     this.kinds = Array<RoundKind>(config.rounds).fill('normal');
     if (config.lightning) this.kinds.splice(Math.max(0, config.rounds - 1), 0, 'lightning');
